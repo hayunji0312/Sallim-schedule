@@ -235,7 +235,7 @@
             <div class="summary-tabs" style="margin-bottom: 20px;">
                 <button class="s-tab active" id="adminTabTeams">팀/곡 관리</button>
                 <button class="s-tab" id="adminTabLocks">공식 일정 (잠금)</button>
-            </div>
+                <button class="s-tab" id="adminTabSettings">설정</button> </div>
             <div id="adminTeamSection">
                 <p style="font-size: 12px; opacity:0.7; text-align: left;">생성된 팀을 삭제하거나, 등록된 곡을 관리합니다.</p>
                 <div id="adminTeamList" style="max-height: 250px; overflow-y: auto;"></div>
@@ -254,6 +254,13 @@
                 </div>
                 <p style="font-size: 12px; font-weight:bold; text-align: left; margin-top: 15px;">현재 잠긴 일정</p>
                 <div id="adminLockList" style="max-height: 150px; overflow-y: auto;"></div>
+            </div>
+            <div id="adminSettingsSection" style="display: none;">
+                <div style="background: var(--bg-color); padding: 15px; border-radius: 8px; border: 1px solid var(--border-color); text-align: left;">
+                    <p style="margin-top:0; font-size:13px; font-weight:bold;">관리자 비밀번호 변경</p>
+                    <input type="password" id="newAdminPwInput" maxlength="4" placeholder="새 비밀번호 4자리" oninput="this.value = this.value.replace(/[^0-9]/g, '');" style="width:100%; padding:8px; margin-bottom:10px; border: 1px solid #ccc; border-radius:4px; box-sizing: border-box; text-align:center; letter-spacing: 5px; font-size: 14px;">
+                    <button class="btn" id="changeAdminPwBtn" style="width: 100%; font-size: 13px; padding: 8px;">비밀번호 변경</button>
+                </div>
             </div>
             <button class="cancel-btn" id="closeAdminDashboardBtn" style="margin-top: 20px; width: 100%;">닫기</button>
         </div>
@@ -451,7 +458,6 @@
             </div>
         </div>
     </div>
-
     <script>
         // --- Firebase 초기화 ---
         const firebaseConfig = {
@@ -476,7 +482,9 @@
         let teamsDB = {}; let teamIdCounter = 1; const MAX_TEAMS = 6; 
         let globalReservations = { '살방': {}, '장전문화센터': {} };
         let globalLocks = {}; 
-        const ADMIN_PW = '1111'; // 관리자 비밀번호
+        
+        // ✨ NEW: 관리자 비밀번호를 변수로 설정 (Firebase 연동)
+        let ADMIN_PW = '1111'; 
 
         let currentGlobalRoom = '살방'; let pendingReservation = null;  
         const sessionEmojis = { '미정': '❓', '보컬': '🎤', '키보드': '🎹', '드럼': '🥁', '기타': '🎸', '베이스': '😎' };
@@ -519,6 +527,15 @@
                 if(doc.exists) { globalLocks = doc.data(); }
                 if(currentTeamId && document.getElementById('mainScreen').style.display === 'flex') renderWeek(currentViewMonday);
                 if(document.getElementById('globalScreen').style.display === 'flex') renderGlobalWeek(currentViewMonday);
+            });
+
+            // ✨ NEW: 4. 시스템 설정 (관리자 비밀번호) 구독
+            db.collection("system").doc("settings").onSnapshot(doc => {
+                if(doc.exists) { 
+                    ADMIN_PW = doc.data().adminPw || '1111'; 
+                } else {
+                    db.collection("system").doc("settings").set({ adminPw: '1111' });
+                }
             });
         }
 
@@ -631,15 +648,44 @@
             } else { alert("⚠️ 관리자 비밀번호가 틀렸습니다!"); }
         };
 
+        // ✨ NEW: 관리자 탭 전환 로직 업데이트
         document.getElementById('adminTabTeams').onclick = () => {
-            document.getElementById('adminTabTeams').classList.add('active'); document.getElementById('adminTabLocks').classList.remove('active');
-            document.getElementById('adminTeamSection').style.display = 'block'; document.getElementById('adminLockSection').style.display = 'none';
+            document.getElementById('adminTabTeams').classList.add('active'); 
+            document.getElementById('adminTabLocks').classList.remove('active');
+            document.getElementById('adminTabSettings').classList.remove('active');
+            document.getElementById('adminTeamSection').style.display = 'block'; 
+            document.getElementById('adminLockSection').style.display = 'none';
+            document.getElementById('adminSettingsSection').style.display = 'none';
         };
         document.getElementById('adminTabLocks').onclick = () => {
-            document.getElementById('adminTabTeams').classList.remove('active'); document.getElementById('adminTabLocks').classList.add('active');
-            document.getElementById('adminTeamSection').style.display = 'none'; document.getElementById('adminLockSection').style.display = 'block';
+            document.getElementById('adminTabTeams').classList.remove('active'); 
+            document.getElementById('adminTabLocks').classList.add('active');
+            document.getElementById('adminTabSettings').classList.remove('active');
+            document.getElementById('adminTeamSection').style.display = 'none'; 
+            document.getElementById('adminLockSection').style.display = 'block';
+            document.getElementById('adminSettingsSection').style.display = 'none';
             populateAdminLockSelects(); renderAdminLockList();
         };
+        document.getElementById('adminTabSettings').onclick = () => {
+            document.getElementById('adminTabTeams').classList.remove('active'); 
+            document.getElementById('adminTabLocks').classList.remove('active');
+            document.getElementById('adminTabSettings').classList.add('active');
+            document.getElementById('adminTeamSection').style.display = 'none'; 
+            document.getElementById('adminLockSection').style.display = 'none';
+            document.getElementById('adminSettingsSection').style.display = 'block';
+        };
+        
+        // ✨ NEW: 관리자 비밀번호 변경 로직
+        document.getElementById('changeAdminPwBtn').onclick = async () => {
+            const newPw = document.getElementById('newAdminPwInput').value;
+            if(newPw.length !== 4) return alert("⚠️ 비밀번호는 숫자 4자리로 꽉 채워 입력해주세요!");
+            if(confirm("관리자 비밀번호를 변경하시겠습니까?")) {
+                await db.collection("system").doc("settings").set({ adminPw: newPw }, { merge: true });
+                alert("✅ 관리자 비밀번호가 성공적으로 변경되었습니다!");
+                document.getElementById('newAdminPwInput').value = '';
+            }
+        };
+
         document.getElementById('closeAdminDashboardBtn').onclick = () => { document.getElementById('adminDashboardModal').style.display = 'none'; renderTeamList(); };
 
         function renderAdminDashboard() {
