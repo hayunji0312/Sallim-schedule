@@ -235,7 +235,8 @@
             <div class="summary-tabs" style="margin-bottom: 20px;">
                 <button class="s-tab active" id="adminTabTeams">팀/곡 관리</button>
                 <button class="s-tab" id="adminTabLocks">공식 일정 (잠금)</button>
-                <button class="s-tab" id="adminTabSettings">설정</button> </div>
+                <button class="s-tab" id="adminTabSettings">설정</button>
+            </div>
             <div id="adminTeamSection">
                 <p style="font-size: 12px; opacity:0.7; text-align: left;">생성된 팀을 삭제하거나, 등록된 곡을 관리합니다.</p>
                 <div id="adminTeamList" style="max-height: 250px; overflow-y: auto;"></div>
@@ -483,7 +484,6 @@
         let globalReservations = { '살방': {}, '장전문화센터': {} };
         let globalLocks = {}; 
         
-        // ✨ NEW: 관리자 비밀번호를 변수로 설정 (Firebase 연동)
         let ADMIN_PW = '1111'; 
 
         let currentGlobalRoom = '살방'; let pendingReservation = null;  
@@ -502,7 +502,6 @@
                     d.startDate = d.startDate.toDate();
                     d.endDate = d.endDate.toDate();
                     
-                    // Firebase의 Array를 시스템이 쓰는 Set으로 변환
                     for(let key in d.scheduleData) {
                         d.scheduleData[key] = new Set(d.scheduleData[key] || []);
                     }
@@ -513,6 +512,11 @@
                 if(currentTeamId && teamsDB[currentTeamId]) {
                     renderUsers(teamsDB[currentTeamId]);
                     renderWeek(currentViewMonday);
+                }
+                
+                // 멤버 선택 창이 열려 있다면 갱신 (누가 실시간으로 들어오거나 나갔을 때)
+                if (document.getElementById('identityModal').style.display === 'flex' && pendingTeamId) {
+                    openIdentityModal(pendingTeamId);
                 }
             });
 
@@ -529,7 +533,7 @@
                 if(document.getElementById('globalScreen').style.display === 'flex') renderGlobalWeek(currentViewMonday);
             });
 
-            // ✨ NEW: 4. 시스템 설정 (관리자 비밀번호) 구독
+            // 4. 시스템 설정 (관리자 비밀번호) 구독
             db.collection("system").doc("settings").onSnapshot(doc => {
                 if(doc.exists) { 
                     ADMIN_PW = doc.data().adminPw || '1111'; 
@@ -544,11 +548,9 @@
             let t = teamsDB[tid];
             let dataToSave = { ...t };
             
-            // 날짜 포맷 변환
             dataToSave.startDate = firebase.firestore.Timestamp.fromDate(t.startDate);
             dataToSave.endDate = firebase.firestore.Timestamp.fromDate(t.endDate);
             
-            // Set을 Array로 변환해서 저장
             dataToSave.scheduleData = {};
             for(let key in t.scheduleData) {
                 dataToSave.scheduleData[key] = Array.from(t.scheduleData[key]);
@@ -648,7 +650,6 @@
             } else { alert("⚠️ 관리자 비밀번호가 틀렸습니다!"); }
         };
 
-        // ✨ NEW: 관리자 탭 전환 로직 업데이트
         document.getElementById('adminTabTeams').onclick = () => {
             document.getElementById('adminTabTeams').classList.add('active'); 
             document.getElementById('adminTabLocks').classList.remove('active');
@@ -675,7 +676,6 @@
             document.getElementById('adminSettingsSection').style.display = 'block';
         };
         
-        // ✨ NEW: 관리자 비밀번호 변경 로직
         document.getElementById('changeAdminPwBtn').onclick = async () => {
             const newPw = document.getElementById('newAdminPwInput').value;
             if(newPw.length !== 4) return alert("⚠️ 비밀번호는 숫자 4자리로 꽉 채워 입력해주세요!");
@@ -788,8 +788,9 @@
         let pendingTeamId = null; 
         function checkPasswordAndEnter(teamId) {
             const team = teamsDB[teamId];
+            pendingTeamId = teamId; // 모달이 켜져 있는 동안 데이터 갱신을 위해 추적
             if (!team.password) { openIdentityModal(teamId); return; }
-            pendingTeamId = teamId; document.getElementById('pwInput').value = ''; document.getElementById('passwordModal').style.display = 'flex';
+            document.getElementById('pwInput').value = ''; document.getElementById('passwordModal').style.display = 'flex';
         }
         document.getElementById('cancelPwBtn').onclick = () => { document.getElementById('passwordModal').style.display = 'none'; pendingTeamId = null; };
         document.getElementById('submitPwBtn').onclick = () => {
@@ -797,18 +798,30 @@
             else { alert("⚠️ 비밀번호가 틀렸습니다!"); }
         };
 
+        // ✨ UPDATE: 접속 중 표시 및 강제 접속 묻기
         function openIdentityModal(teamId) {
             const team = teamsDB[teamId];
             const listContainer = document.getElementById('identityUserList'); listContainer.innerHTML = '';
             team.users.forEach(u => {
                 const btn = document.createElement('button'); btn.className = 'identity-btn';
-                btn.innerHTML = `<div class="color-circle" style="background-color: ${u.color};"></div> ${u.emoji} ${u.name} (${u.session})`;
-                btn.onclick = () => { document.getElementById('identityModal').style.display = 'none'; enterTeam(teamId, u); };
+                
+                const onlineTag = u.isOnline ? '<span style="color:#28a745; font-size:12px; margin-left:auto; font-weight:bold;">🟢 접속중</span>' : '';
+                
+                btn.innerHTML = `<div class="color-circle" style="background-color: ${u.color};"></div> ${u.emoji} ${u.name} (${u.session}) ${onlineTag}`;
+                btn.onclick = () => { 
+                    if (u.isOnline) {
+                        if(!confirm(`현재 누군가 '${u.name}'(으)로 접속 중입니다.\n기존 연결을 강제로 끊고 내가 접속할까요?`)) {
+                            return; 
+                        }
+                    }
+                    document.getElementById('identityModal').style.display = 'none'; 
+                    enterTeam(teamId, u); 
+                };
                 listContainer.appendChild(btn);
             });
             document.getElementById('identityModal').style.display = 'flex';
         }
-        document.getElementById('cancelIdentityBtn').onclick = () => { document.getElementById('identityModal').style.display = 'none'; };
+        document.getElementById('cancelIdentityBtn').onclick = () => { document.getElementById('identityModal').style.display = 'none'; pendingTeamId = null; };
 
         document.getElementById('cancelSetupBtn').onclick = () => { isEditMode ? enterTeam(editingTeamId, activeUser) : showScreen('teamScreen'); };
         
@@ -830,7 +843,7 @@
 
             if (isEditMode) {
                 const team = teamsDB[editingTeamId]; team.name = name; team.password = pw; team.startDate = start; team.endDate = end;
-                if (count > team.memberCount) { for (let i = team.memberCount; i < count; i++) { team.users.push({ id: i + 1, name: `멤버 ${i + 1}`, session: '미정', emoji: '❓', color: activePalette[i % 8], assignedSongs: [] }); } } 
+                if (count > team.memberCount) { for (let i = team.memberCount; i < count; i++) { team.users.push({ id: i + 1, name: `멤버 ${i + 1}`, session: '미정', emoji: '❓', color: activePalette[i % 8], assignedSongs: [], isOnline: false }); } } 
                 else if (count < team.memberCount) { team.users = team.users.slice(0, count); }
                 team.memberCount = count; alert("✅ 수정이 완료되었습니다!"); 
                 if(!team.users.find(u => u.id === activeUser.id)) activeUser = team.users[0];
@@ -838,10 +851,11 @@
                 enterTeam(editingTeamId, activeUser);
             } else {
                 const users = [];
-                for (let i = 0; i < count; i++) { users.push({ id: i + 1, name: `멤버 ${i + 1}`, session: '미정', emoji: '❓', color: activePalette[i % 8], assignedSongs: [] }); }
+                for (let i = 0; i < count; i++) { users.push({ id: i + 1, name: `멤버 ${i + 1}`, session: '미정', emoji: '❓', color: activePalette[i % 8], assignedSongs: [], isOnline: false }); }
                 const newTeamId = `team_${teamIdCounter++}`;
                 teamsDB[newTeamId] = { id: newTeamId, name: name, password: pw, startDate: start, endDate: end, memberCount: count, users: users, scheduleData: {}, songs: [] };
                 await saveTeam(newTeamId);
+                pendingTeamId = newTeamId;
                 openIdentityModal(newTeamId); 
             }
         };
@@ -871,14 +885,49 @@
             await db.collection("teams").doc(currentTeamId).delete();
             await saveSystem();
 
-            alert("🗑️ 팀이 완전히 삭제되었습니다."); document.getElementById('teamDeleteModal').style.display = 'none'; renderTeamList(); showScreen('teamScreen');
+            alert("🗑️ 팀이 완전히 삭제되었습니다."); document.getElementById('teamDeleteModal').style.display = 'none'; 
+            currentTeamId = null; activeUser = null; pendingTeamId = null;
+            renderTeamList(); showScreen('teamScreen');
         };
 
-        document.getElementById('backToTeamsBtn').onclick = () => { renderTeamList(); showScreen('teamScreen'); };
+        // ✨ UPDATE: 팀을 나갈 때 접속 상태 false로 변경하는 함수
+        async function leaveCurrentTeam() {
+            if (currentTeamId && activeUser) {
+                const team = teamsDB[currentTeamId];
+                if (team) {
+                    const userIndex = team.users.findIndex(u => u.id === activeUser.id);
+                    if (userIndex !== -1) {
+                        team.users[userIndex].isOnline = false;
+                        await saveTeam(currentTeamId);
+                    }
+                }
+            }
+            currentTeamId = null; 
+            activeUser = null;
+            pendingTeamId = null;
+        }
+
+        // ✨ UPDATE: 뒤로가기 버튼에 퇴장 함수 적용
+        document.getElementById('backToTeamsBtn').onclick = async () => { 
+            await leaveCurrentTeam();
+            renderTeamList(); 
+            showScreen('teamScreen'); 
+        };
         
-        function enterTeam(teamId, userObj) {
+        // ✨ UPDATE: 팀 입장 시 Firebase에 접속 상태 true 로 변경
+        async function enterTeam(teamId, userObj) {
             currentTeamId = teamId; const team = teamsDB[teamId];
-            document.getElementById('mainTeamTitle').innerText = team.name; activeUser = userObj; 
+            
+            const userIndex = team.users.findIndex(u => u.id === userObj.id);
+            if (userIndex !== -1) {
+                team.users[userIndex].isOnline = true;
+                await saveTeam(teamId); 
+                activeUser = team.users[userIndex];
+            } else {
+                activeUser = userObj;
+            }
+
+            document.getElementById('mainTeamTitle').innerText = team.name; 
             renderUsers(team); buildTableSkeleton(); currentViewMonday = getMonday(team.startDate); renderWeek(currentViewMonday); showScreen('mainScreen');
         }
 
@@ -1236,6 +1285,20 @@
         }
         document.getElementById('gPrevWeekBtn').onclick = () => { currentViewMonday.setDate(currentViewMonday.getDate() - 7); renderGlobalWeek(currentViewMonday); };
         document.getElementById('gNextWeekBtn').onclick = () => { currentViewMonday.setDate(currentViewMonday.getDate() + 7); renderGlobalWeek(currentViewMonday); };
+
+        // ✨ UPDATE: 창을 닫거나 새로고침 할 때 접속 상태 해제 방어막
+        window.addEventListener('beforeunload', () => {
+            if (currentTeamId && activeUser) {
+                const team = teamsDB[currentTeamId];
+                if (team) {
+                    const userIndex = team.users.findIndex(u => u.id === activeUser.id);
+                    if (userIndex !== -1) {
+                        team.users[userIndex].isOnline = false;
+                        saveTeam(currentTeamId); 
+                    }
+                }
+            }
+        });
 
         window.onload = () => { startSync(); document.getElementById('noticeModal').style.display = 'flex'; };
     </script>
