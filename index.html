@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>합주 일정 조율</title>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
     <style>
         /* --- 테마 변수 설정 --- */
         :root {
@@ -38,12 +40,8 @@
         .cancel-btn:hover { background-color: var(--border-color); }
         .danger-btn { background-color: transparent; color: #d9534f; border: 1px solid #d9534f; padding: 6px 12px; border-radius: 6px; font-size: 13px; cursor: pointer; font-weight: bold; transition: 0.2s; }
         .danger-btn:hover { background-color: #d9534f; color: white; }
-
-        /* 카카오톡 색상 공유 버튼 */
         .kakao-btn { background-color: #FEE500; color: #000000; border: none; padding: 8px 15px; border-radius: 6px; font-size: 13px; font-weight: bold; cursor: pointer; transition: 0.2s; }
         .kakao-btn:hover { background-color: #e6ce00; }
-
-        /* 곡 추가 버튼 */
         .song-add-btn { background-color: var(--card-bg); border: 1px solid var(--border-color); color: var(--text-color); padding: 6px 12px; border-radius: 20px; font-size: 13px; font-weight: bold; cursor: pointer; transition: 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
         .song-add-btn:hover { background-color: var(--border-color); }
 
@@ -59,7 +57,6 @@
         
         .member-checkbox-list { display: flex; flex-direction: column; gap: 8px; text-align: left; margin: 10px 0 20px 0; max-height: 150px; overflow-y: auto; padding: 10px; border: 1px solid var(--border-color); border-radius: 8px; background: var(--bg-color); }
         .member-checkbox-list label { display: flex; align-items: center; gap: 10px; cursor: pointer; font-size: 14px; }
-
         #identityUserList { display: flex; flex-direction: column; gap: 8px; margin-top: 15px; max-height: 200px; overflow-y: auto; padding: 5px; }
         .identity-btn { background-color: var(--bg-color); border: 2px solid var(--border-color); color: var(--text-color); padding: 12px; border-radius: 8px; cursor: pointer; font-size: 15px; font-weight: bold; transition: 0.2s; display: flex; align-items: center; gap: 10px; }
         .identity-btn:hover { border-color: var(--btn-bg); transform: scale(1.02); box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
@@ -115,7 +112,6 @@
         .room-tab.active { border-color: var(--btn-bg); background: var(--btn-bg); color: var(--btn-text); opacity: 1; }
         .room-tab:hover:not(.active) { opacity: 0.8; }
 
-        /* 유저 리스트 */
         .user-selection { display: flex; flex-direction: column; gap: 12px; margin-top: 65px; }
         .user-btn { display: flex; align-items: center; gap: 12px; padding: 10px 15px; border: 1px solid var(--border-color); border-radius: 8px; cursor: pointer; background-color: var(--card-bg); color: var(--text-color); font-size: 14px; transition: 0.2s; width: 130px; user-select: none; }
         .user-btn:hover { background-color: var(--border-color); }
@@ -126,7 +122,6 @@
         #checkUnvotedBtn { background: transparent; border: 1px dashed var(--border-color); color: var(--text-color); padding: 5px; border-radius: 6px; font-size: 12px; cursor: pointer; margin-bottom: 5px; opacity: 0.8; }
         #checkUnvotedBtn:hover { opacity: 1; border-style: solid; }
 
-        /* 시간표 */
         table { border-collapse: collapse; border: 2px solid var(--table-border-dark); user-select: none; table-layout: fixed; }
         th, td { border: 1px solid var(--table-border); width: 75px; text-align: center; position: relative; }
         th { background-color: var(--table-header-bg); padding: 10px 0; font-size: 14px; border-bottom: 2px solid var(--table-border-dark); }
@@ -152,7 +147,6 @@
         .s-tab { background: transparent; border: 1px solid var(--border-color); padding: 6px 12px; border-radius: 20px; font-size: 13px; cursor: pointer; color: var(--text-color); opacity: 0.6; }
         .s-tab.active { background: var(--btn-bg); color: var(--btn-text); border-color: var(--btn-bg); opacity: 1; font-weight: bold; }
 
-        /* 관리자 모드 관련 */
         #adminBtn { position: absolute; top: 20px; left: 20px; font-size: 12px; opacity: 0.5; padding: 5px 10px; border: 1px solid var(--border-color); background: transparent; color: var(--text-color); border-radius: 4px; cursor: pointer;}
         #adminBtn:hover { opacity: 1; background: var(--card-bg); }
         .admin-list-item { display: flex; justify-content: space-between; align-items: center; padding: 10px; border: 1px solid var(--border-color); border-radius: 8px; margin-bottom: 8px; text-align: left; }
@@ -238,17 +232,14 @@
     <div id="adminDashboardModal" class="modal-overlay" style="display: none;">
         <div class="modal-content" style="width: 400px;">
             <h2>⚙️ 관리자 대시보드</h2>
-            
             <div class="summary-tabs" style="margin-bottom: 20px;">
                 <button class="s-tab active" id="adminTabTeams">팀/곡 관리</button>
                 <button class="s-tab" id="adminTabLocks">공식 일정 (잠금)</button>
             </div>
-
             <div id="adminTeamSection">
                 <p style="font-size: 12px; opacity:0.7; text-align: left;">생성된 팀을 삭제하거나, 등록된 곡을 관리합니다.</p>
                 <div id="adminTeamList" style="max-height: 250px; overflow-y: auto;"></div>
             </div>
-
             <div id="adminLockSection" style="display: none;">
                 <div style="background: var(--bg-color); padding: 15px; border-radius: 8px; border: 1px solid var(--border-color); text-align: left;">
                     <p style="margin-top:0; font-size:13px; font-weight:bold;">새로운 일정 잠금 설정</p>
@@ -264,7 +255,6 @@
                 <p style="font-size: 12px; font-weight:bold; text-align: left; margin-top: 15px;">현재 잠긴 일정</p>
                 <div id="adminLockList" style="max-height: 150px; overflow-y: auto;"></div>
             </div>
-
             <button class="cancel-btn" id="closeAdminDashboardBtn" style="margin-top: 20px; width: 100%;">닫기</button>
         </div>
     </div>
@@ -302,13 +292,10 @@
                     <option value="베이스">😎 베이스</option>
                 </select>
             </div>
-            
             <div style="margin-top: 15px; text-align: left; padding: 0 10px;">
                 <p style="font-size: 13px; font-weight: bold; margin-bottom: 5px;">🎵 참여하는 곡 선택</p>
-                <div id="editUserSongList" style="display: flex; flex-wrap: wrap; gap: 10px; font-size: 13px;">
-                    </div>
+                <div id="editUserSongList" style="display: flex; flex-wrap: wrap; gap: 10px; font-size: 13px;"></div>
             </div>
-
             <div style="display: flex; gap: 10px; justify-content: center; margin-top: 20px;">
                 <button class="cancel-btn" id="cancelUserEditBtn">취소</button>
                 <button class="btn" id="saveUserEditBtn">저장</button>
@@ -319,18 +306,15 @@
     <div id="summaryModal" class="modal-overlay" style="display: none;">
         <div class="modal-content" style="width: 350px;">
             <h2>🕒 우리 언제 만날까?</h2>
-            
             <div class="summary-tabs">
                 <button class="s-tab active" id="tabMember">팀원으로 결정</button>
                 <button class="s-tab" id="tabSong">곡으로 결정</button>
             </div>
-
             <div style="text-align: left; padding: 0 10px; margin-top: 15px;">
                 <label style="cursor: pointer; font-size: 14px; font-weight: bold;">
                     <input type="checkbox" id="selectAllMembersCb" checked> ✅ 전체 선택 / 해제
                 </label>
             </div>
-            
             <div class="member-checkbox-list" id="summaryMemberList"></div>
             <button class="btn" id="calculateSummaryBtn" style="width: 100%; margin-bottom: 15px;">가능한 시간 찾기 🔍</button>
             <div id="summaryResult" style="text-align: center; font-size: 14px; color: var(--text-color);"></div>
@@ -370,7 +354,6 @@
 
     <div id="teamScreen">
         <button id="adminBtn">⚙️ 관리자 모드</button>
-
         <h1>🎸 살림 합주 일정</h1>
         <p style="font-size: 13px; opacity:0.7; margin-top:-5px; margin-bottom:20px;">팀 생성 현황: <span id="teamCountText" style="font-weight:bold;">0</span> / 6</p>
         <div class="notice-btn-wrap">
@@ -378,7 +361,7 @@
             <button id="shareLinkBtn" class="kakao-btn">💬 단톡방 링크 복사</button>
         </div>
         <div style="margin-bottom: 30px;">
-            <button id="globalScheduleBtn">📅 살림 전체 합주실 예약 현황 보기</button>
+            <button id="globalScheduleBtn" class="btn" style="width:100%;">📅 살림 전체 합주실 예약 현황 보기</button>
         </div>
         <div class="team-grid" id="teamGrid"></div>
     </div>
@@ -470,6 +453,19 @@
     </div>
 
     <script>
+        // --- Firebase 초기화 ---
+        const firebaseConfig = {
+            apiKey: "AIzaSyBmf7TMKhAqERFL3s_yIifUjEFGMWs_mI4",
+            authDomain: "salim-schedule.firebaseapp.com",
+            projectId: "salim-schedule",
+            storageBucket: "salim-schedule.firebasestorage.app",
+            messagingSenderId: "74667309021",
+            appId: "1:74667309021:web:e7a7355c0b62e5537fe834"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        // --- 전역 변수 설정 ---
         const themePalettes = {
             'theme-default': ["#222222", "#444444", "#666666", "#888888", "#AAAAAA", "#CCCCCC", "#E5E5E5", "#F5F5F5"],
             'theme-wood': ["#3E2723", "#4E342E", "#5D4037", "#6D4C41", "#795548", "#8D6E63", "#A1887F", "#D7CCC8"],
@@ -477,6 +473,89 @@
             'theme-blue': ["#0B2B46", "#124068", "#1A568C", "#2470B3", "#3B8FD9", "#69AEE3", "#98C9ED", "#C6E4F6"]
         };
 
+        let teamsDB = {}; let teamIdCounter = 1; const MAX_TEAMS = 6; 
+        let globalReservations = { '살방': {}, '장전문화센터': {} };
+        let globalLocks = {}; 
+        const ADMIN_PW = '1111'; // 관리자 비밀번호
+
+        let currentGlobalRoom = '살방'; let pendingReservation = null;  
+        const sessionEmojis = { '미정': '❓', '보컬': '🎤', '키보드': '🎹', '드럼': '🥁', '기타': '🎸', '베이스': '😎' };
+        let currentTeamId = null; let currentViewMonday = null; let activeUser = null; 
+        let isDragging = false; let isErasing = false; let isEditMode = false; let editingTeamId = null; let editingUserId = null;
+        let summaryMode = 'member'; 
+
+        // --- Firebase 실시간 동기화 함수 ---
+        function startSync() {
+            // 1. 팀 목록 구독
+            db.collection("teams").onSnapshot(qs => {
+                teamsDB = {};
+                qs.forEach(doc => {
+                    let d = doc.data();
+                    d.startDate = d.startDate.toDate();
+                    d.endDate = d.endDate.toDate();
+                    
+                    // Firebase의 Array를 시스템이 쓰는 Set으로 변환
+                    for(let key in d.scheduleData) {
+                        d.scheduleData[key] = new Set(d.scheduleData[key] || []);
+                    }
+                    teamsDB[doc.id] = d;
+                });
+                
+                renderTeamList();
+                if(currentTeamId && teamsDB[currentTeamId]) {
+                    renderUsers(teamsDB[currentTeamId]);
+                    renderWeek(currentViewMonday);
+                }
+            });
+
+            // 2. 글로벌 예약 현황 구독
+            db.collection("system").doc("reservations").onSnapshot(doc => {
+                if(doc.exists) { globalReservations = doc.data(); }
+                if(document.getElementById('globalScreen').style.display === 'flex') renderGlobalWeek(currentViewMonday);
+            });
+
+            // 3. 관리자 공식일정(잠금) 현황 구독
+            db.collection("system").doc("locks").onSnapshot(doc => {
+                if(doc.exists) { globalLocks = doc.data(); }
+                if(currentTeamId && document.getElementById('mainScreen').style.display === 'flex') renderWeek(currentViewMonday);
+                if(document.getElementById('globalScreen').style.display === 'flex') renderGlobalWeek(currentViewMonday);
+            });
+        }
+
+        // --- Firebase 데이터 저장 함수 ---
+        async function saveTeam(tid) {
+            let t = teamsDB[tid];
+            let dataToSave = { ...t };
+            
+            // 날짜 포맷 변환
+            dataToSave.startDate = firebase.firestore.Timestamp.fromDate(t.startDate);
+            dataToSave.endDate = firebase.firestore.Timestamp.fromDate(t.endDate);
+            
+            // Set을 Array로 변환해서 저장
+            dataToSave.scheduleData = {};
+            for(let key in t.scheduleData) {
+                dataToSave.scheduleData[key] = Array.from(t.scheduleData[key]);
+            }
+            
+            await db.collection("teams").doc(tid).set(dataToSave);
+        }
+
+        async function saveSystem() {
+            await db.collection("system").doc("reservations").set(globalReservations);
+            await db.collection("system").doc("locks").set(globalLocks);
+        }
+
+        // --- UI 및 로직 ---
+        document.addEventListener('mouseup', () => { isDragging = false; });
+
+        function showScreen(screenId) {
+            document.querySelectorAll('.modal-overlay').forEach(el => el.style.display = 'none');
+            document.getElementById('teamScreen').style.display = 'none'; document.getElementById('setupScreen').style.display = 'none';
+            document.getElementById('mainScreen').style.display = 'none'; document.getElementById('globalScreen').style.display = 'none';
+            document.getElementById(screenId).style.display = (screenId === 'mainScreen' || screenId === 'globalScreen') ? 'flex' : 'block';
+        }
+
+        // 테마 관련
         const themeBtn = document.getElementById('themeToggleBtn');
         const themePopup = document.getElementById('themePopup');
         themeBtn.onclick = (e) => { e.stopPropagation(); themePopup.style.display = themePopup.style.display === 'flex' ? 'none' : 'flex'; };
@@ -493,35 +572,14 @@
             };
         });
 
-        // 링크 복사 (카카오톡 공유 대용)
+        // 링크 복사
         document.getElementById('shareLinkBtn').onclick = () => {
             navigator.clipboard.writeText(window.location.href).then(() => {
                 alert("✨ 사이트 링크가 복사되었습니다!\n카카오톡 단톡방에 붙여넣기 해서 부원들을 초대하세요.");
             });
         };
 
-        // DB 및 락 시스템
-        let teamsDB = {}; let teamIdCounter = 1; const MAX_TEAMS = 6; 
-        let globalReservations = { '살방': {}, '장전문화센터': {} };
-        let globalLocks = {}; 
-        const ADMIN_PW = '1111'; // 관리자 비밀번호
-
-        let currentGlobalRoom = '살방'; let pendingReservation = null;  
-        const sessionEmojis = { '미정': '❓', '보컬': '🎤', '키보드': '🎹', '드럼': '🥁', '기타': '🎸', '베이스': '😎' };
-        let currentTeamId = null; let currentViewMonday = null; let activeUser = null; 
-        let isDragging = false; let isErasing = false; let isEditMode = false; let editingTeamId = null; let editingUserId = null;
-
-        let summaryMode = 'member'; 
-
-        document.addEventListener('mouseup', () => { isDragging = false; });
-
-        function showScreen(screenId) {
-            document.querySelectorAll('.modal-overlay').forEach(el => el.style.display = 'none');
-            document.getElementById('teamScreen').style.display = 'none'; document.getElementById('setupScreen').style.display = 'none';
-            document.getElementById('mainScreen').style.display = 'none'; document.getElementById('globalScreen').style.display = 'none';
-            document.getElementById(screenId).style.display = (screenId === 'mainScreen' || screenId === 'globalScreen') ? 'flex' : 'block';
-        }
-
+        // 상단 버튼들
         document.getElementById('closeNoticeBtn').onclick = () => { renderTeamList(); showScreen('teamScreen'); };
         document.getElementById('showNoticeBtn').onclick = () => { document.getElementById('noticeModal').style.display = 'flex'; };
 
@@ -590,7 +648,6 @@
             Object.values(teamsDB).forEach(team => {
                 const item = document.createElement('div'); item.className = 'admin-list-item';
                 
-                // 팀 내 곡 리스트 렌더링 (삭제 기능 포함)
                 let songsHtml = team.songs && team.songs.length > 0 
                     ? team.songs.map((s, idx) => `<span class="admin-song-tag">${s} <span class="admin-song-del" onclick="deleteSongAdmin('${team.id}', ${idx})">x</span></span>`).join('') 
                     : '<span style="color:gray; font-size:11px;">등록된 곡 없음</span>';
@@ -603,23 +660,26 @@
                     </div>
                 `;
                 const delBtn = document.createElement('button'); delBtn.className = 'danger-btn'; delBtn.innerText = '팀 삭제';
-                delBtn.onclick = () => {
+                delBtn.onclick = async () => {
                     if(confirm(`[${team.name}] 팀을 강제로 삭제하시겠습니까?`)) {
                         for (let room of ['살방', '장전문화센터']) { for (let key in globalReservations[room]) { if (globalReservations[room][key].teamId === team.id) delete globalReservations[room][key]; } }
-                        delete teamsDB[team.id]; renderAdminDashboard();
+                        await db.collection("teams").doc(team.id).delete();
+                        await saveSystem();
+                        renderAdminDashboard();
                     }
                 };
                 item.appendChild(delBtn); list.appendChild(item);
             });
         }
 
-        window.deleteSongAdmin = function(teamId, songIdx) {
+        window.deleteSongAdmin = async function(teamId, songIdx) {
             if(confirm("해당 곡을 정말 삭제하시겠습니까? (팀원의 참여 곡 정보에서도 지워집니다)")) {
                 const team = teamsDB[teamId];
                 const removedSong = team.songs.splice(songIdx, 1)[0];
                 team.users.forEach(u => {
                     if(u.assignedSongs) u.assignedSongs = u.assignedSongs.filter(s => s !== removedSong);
                 });
+                await saveTeam(teamId);
                 renderAdminDashboard();
             }
         };
@@ -632,7 +692,7 @@
             startSel.value = "09:00"; endSel.value = "22:30";
         }
 
-        document.getElementById('addLockBtn').onclick = () => {
+        document.getElementById('addLockBtn').onclick = async () => {
             const dateVal = document.getElementById('adminLockDate').value;
             const sTime = document.getElementById('adminLockStart').value; const eTime = document.getElementById('adminLockEnd').value;
             const reason = document.getElementById('adminLockReason').value.trim() || '공식 일정';
@@ -647,6 +707,7 @@
                 globalLocks[`${yyyymmdd}_${h}:${m}`] = reason;
                 curr.setMinutes(curr.getMinutes() + 30);
             }
+            await saveSystem();
             alert(`[${reason}] 잠금이 설정되었습니다!`); document.getElementById('adminLockReason').value = ''; renderAdminLockList();
         };
 
@@ -667,9 +728,11 @@
                 const item = document.createElement('div'); item.className = 'admin-list-item';
                 item.innerHTML = `<div><strong>${y}.${m}.${day} [${r}]</strong><span>${times[0]} 부터 총 ${times.length}칸</span></div>`;
                 const delBtn = document.createElement('button'); delBtn.className = 'cancel-btn'; delBtn.innerText = '해제'; delBtn.style.padding = "5px 10px";
-                delBtn.onclick = () => {
+                delBtn.onclick = async () => {
                     if(confirm("이 잠금을 해제하시겠습니까?")) {
-                        times.forEach(t => { delete globalLocks[`${d}_${t}`]; }); renderAdminLockList();
+                        times.forEach(t => { delete globalLocks[`${d}_${t}`]; }); 
+                        await saveSystem();
+                        renderAdminLockList();
                     }
                 };
                 item.appendChild(delBtn); list.appendChild(item);
@@ -703,8 +766,8 @@
 
         document.getElementById('cancelSetupBtn').onclick = () => { isEditMode ? enterTeam(editingTeamId, activeUser) : showScreen('teamScreen'); };
         
-        // --- 팀 생성 (곡은 이제 여기서 안 받음) ---
-        document.getElementById('startBtn').onclick = () => {
+        // --- 팀 생성 ---
+        document.getElementById('startBtn').onclick = async () => {
             const name = document.getElementById('teamName').value.trim(); const pw = document.getElementById('teamPassword').value;
             const startVal = document.getElementById('startDate').value; const endVal = document.getElementById('endDate').value;
             const count = parseInt(document.getElementById('memberCount').value);
@@ -725,13 +788,14 @@
                 else if (count < team.memberCount) { team.users = team.users.slice(0, count); }
                 team.memberCount = count; alert("✅ 수정이 완료되었습니다!"); 
                 if(!team.users.find(u => u.id === activeUser.id)) activeUser = team.users[0];
+                await saveTeam(editingTeamId);
                 enterTeam(editingTeamId, activeUser);
             } else {
                 const users = [];
                 for (let i = 0; i < count; i++) { users.push({ id: i + 1, name: `멤버 ${i + 1}`, session: '미정', emoji: '❓', color: activePalette[i % 8], assignedSongs: [] }); }
                 const newTeamId = `team_${teamIdCounter++}`;
-                // 생성 시 songs는 빈 배열로 시작
                 teamsDB[newTeamId] = { id: newTeamId, name: name, password: pw, startDate: start, endDate: end, memberCount: count, users: users, scheduleData: {}, songs: [] };
+                await saveTeam(newTeamId);
                 openIdentityModal(newTeamId); 
             }
         };
@@ -752,12 +816,16 @@
             document.getElementById('teamDeleteModal').style.display = 'flex';
         };
         document.getElementById('cancelDeleteBtn').onclick = () => { document.getElementById('teamDeleteModal').style.display = 'none'; };
-        document.getElementById('confirmDeleteBtn').onclick = () => {
+        document.getElementById('confirmDeleteBtn').onclick = async () => {
             const team = teamsDB[currentTeamId]; const confirmWord = document.getElementById('deleteConfirmInput').value.trim();
             if (team.password) { const pw = document.getElementById('deletePwInput').value; if (pw !== team.password) return alert("⚠️ 비밀번호가 틀렸습니다!"); }
             if (confirmWord !== "삭제한다") return alert("⚠️ 정확히 '삭제한다' 라고 입력해주세요!");
             for (let room of ['살방', '장전문화센터']) { for (let key in globalReservations[room]) { if (globalReservations[room][key].teamId === currentTeamId) delete globalReservations[room][key]; } }
-            delete teamsDB[currentTeamId]; alert("🗑️ 팀이 완전히 삭제되었습니다."); document.getElementById('teamDeleteModal').style.display = 'none'; renderTeamList(); showScreen('teamScreen');
+            
+            await db.collection("teams").doc(currentTeamId).delete();
+            await saveSystem();
+
+            alert("🗑️ 팀이 완전히 삭제되었습니다."); document.getElementById('teamDeleteModal').style.display = 'none'; renderTeamList(); showScreen('teamScreen');
         };
 
         document.getElementById('backToTeamsBtn').onclick = () => { renderTeamList(); showScreen('teamScreen'); };
@@ -778,7 +846,7 @@
             document.getElementById('addSongModal').style.display = 'flex';
         };
         document.getElementById('cancelAddSongBtn').onclick = () => { document.getElementById('addSongModal').style.display = 'none'; };
-        document.getElementById('confirmAddSongBtn').onclick = () => {
+        document.getElementById('confirmAddSongBtn').onclick = async () => {
             const newSong = document.getElementById('newSongInput').value.trim();
             if(!newSong) return alert("곡명을 입력해주세요!");
             const team = teamsDB[currentTeamId];
@@ -786,6 +854,7 @@
             if(team.songs.includes(newSong)) return alert("이미 등록된 곡입니다!");
             
             team.songs.push(newSong);
+            await saveTeam(currentTeamId);
             alert(`🎵 '${newSong}' 곡이 추가되었습니다!`);
             document.getElementById('addSongModal').style.display = 'none';
         };
@@ -884,14 +953,14 @@
                 mergedBlocks.push({start: start, end: endStr});
                 resultHtml += `<strong style="display:block; margin-bottom:5px; color:var(--text-color);">${y}.${m}.${d} (${dayStr})</strong>`;
                 mergedBlocks.forEach(block => {
-                    // --- 모바일 대응: ondblclick 대신 onclick으로 변경 ---
                     resultHtml += `<span class="summary-block" data-date="${dateStr}" data-start="${block.start}" data-end="${block.end}" title="클릭하여 예약 공간 선택하기">${block.start} ~ ${block.end}</span>`;
                 });
             }
             resultHtml += '</div>'; document.getElementById('summaryResult').innerHTML = resultHtml;
             
-            // 이벤트 연결 (onclick으로)
-            document.querySelectorAll('.summary-block').forEach(span => { span.onclick = () => openRoomSelectModal(span.dataset.date, span.dataset.start, span.dataset.end); });
+            document.querySelectorAll('.summary-block').forEach(span => { 
+                span.onclick = () => openRoomSelectModal(span.dataset.date, span.dataset.start, span.dataset.end); 
+            });
         };
 
         function generateTimeOptions(start, end) {
@@ -916,7 +985,7 @@
         document.querySelectorAll('input[name="roomType"]').forEach(radio => { radio.onchange = () => { document.getElementById('roomWarning').style.display = radio.value === '장전문화센터' ? 'block' : 'none'; }; });
         document.getElementById('cancelRoomBtn').onclick = () => { document.getElementById('roomSelectModal').style.display = 'none'; pendingReservation = null; };
         
-        document.getElementById('confirmRoomBtn').onclick = () => {
+        document.getElementById('confirmRoomBtn').onclick = async () => {
             if(!pendingReservation) return;
             const selectedRoom = document.querySelector('input[name="roomType"]:checked').value; const dateStr = pendingReservation.dateStr;
             const chosenStart = document.getElementById('reserveStartTime').value; const chosenEnd = document.getElementById('reserveEndTime').value;
@@ -931,15 +1000,21 @@
                 if(roomSchedule[slot] && roomSchedule[slot].teamId !== currentTeamId) { return alert(`앗! 해당 시간(${slot.split('_')[1]})에 이미 '${roomSchedule[slot].teamName}' 팀이 [${selectedRoom}]을 예약했습니다 😭`); } 
             }
             if (roomSchedule[slots[0]] && roomSchedule[slots[0]].teamId === currentTeamId) {
-                if(confirm(`이미 우리 팀이 [${selectedRoom}]에 예약한 시간입니다. 예약을 취소할까요?`)) { slots.forEach(slot => delete roomSchedule[slot]); alert("예약이 취소되었습니다."); document.getElementById('roomSelectModal').style.display = 'none'; } return;
+                if(confirm(`이미 우리 팀이 [${selectedRoom}]에 예약한 시간입니다. 예약을 취소할까요?`)) { 
+                    slots.forEach(slot => delete roomSchedule[slot]); 
+                    await saveSystem();
+                    alert("예약이 취소되었습니다."); document.getElementById('roomSelectModal').style.display = 'none'; 
+                } 
+                return;
             }
             slots.forEach(slot => { roomSchedule[slot] = { teamId: currentTeamId, teamName: teamsDB[currentTeamId].name }; });
+            await saveSystem();
             alert(`🎉 [${selectedRoom}] ${chosenStart} ~ ${chosenEnd} 예약이 확정되었습니다!\n전체 시간표에서 확인해보세요.`);
             document.getElementById('roomSelectModal').style.display = 'none'; pendingReservation = null;
         };
 
         document.getElementById('cancelUserEditBtn').onclick = () => { document.getElementById('userEditModal').style.display = 'none'; };
-        document.getElementById('saveUserEditBtn').onclick = () => {
+        document.getElementById('saveUserEditBtn').onclick = async () => {
             const newName = document.getElementById('editUserName').value.trim(); const newSession = document.getElementById('editUserSession').value;
             if (!newName) return alert("이름을 입력해주세요!");
             const checkedSongs = Array.from(document.querySelectorAll('.edit-song-cb:checked')).map(cb => cb.value);
@@ -948,6 +1023,7 @@
                 team.users[userIndex].name = newName; team.users[userIndex].session = newSession; team.users[userIndex].emoji = sessionEmojis[newSession]; team.users[userIndex].assignedSongs = checkedSongs;
                 if (activeUser.id === editingUserId) activeUser = team.users[userIndex]; 
             }
+            await saveTeam(currentTeamId);
             document.getElementById('userEditModal').style.display = 'none'; renderUsers(team); document.querySelectorAll('#scheduleTable .cell').forEach(td => updateCellUI(td)); 
         };
 
@@ -997,17 +1073,21 @@
                     const timeStr = `${hour.toString().padStart(2, '0')}:${min}`; timeTd.innerText = timeStr; tr.appendChild(timeTd);
                     for (let day = 0; day < 7; day++) {
                         const td = document.createElement('td'); td.className = 'cell'; td.dataset.time = timeStr; td.dataset.dayIndex = day; 
-                        td.addEventListener('mousedown', function(e) {
+                        td.addEventListener('mousedown', async function(e) {
                             e.preventDefault(); if(this.classList.contains('disabled') || this.classList.contains('locked')) return; 
                             isDragging = true; const key = this.dataset.key; const teamData = teamsDB[currentTeamId].scheduleData;
                             if(!teamData[key]) teamData[key] = new Set();
-                            if (teamData[key].has(activeUser.id)) { isErasing = true; teamData[key].delete(activeUser.id); } else { isErasing = false; teamData[key].add(activeUser.id); } updateCellUI(this);
+                            if (teamData[key].has(activeUser.id)) { isErasing = true; teamData[key].delete(activeUser.id); } else { isErasing = false; teamData[key].add(activeUser.id); } 
+                            updateCellUI(this);
+                            await saveTeam(currentTeamId);
                         });
-                        td.addEventListener('mouseenter', function() {
+                        td.addEventListener('mouseenter', async function() {
                             if (isDragging && !this.classList.contains('disabled') && !this.classList.contains('locked')) {
                                 const key = this.dataset.key; const teamData = teamsDB[currentTeamId].scheduleData;
                                 if(!teamData[key]) teamData[key] = new Set();
-                                if (isErasing) { teamData[key].delete(activeUser.id); } else { teamData[key].add(activeUser.id); } updateCellUI(this);
+                                if (isErasing) { teamData[key].delete(activeUser.id); } else { teamData[key].add(activeUser.id); } 
+                                updateCellUI(this);
+                                await saveTeam(currentTeamId);
                             }
                         }); tr.appendChild(td);
                     } scheduleBody.appendChild(tr);
@@ -1111,7 +1191,7 @@
         document.getElementById('gPrevWeekBtn').onclick = () => { currentViewMonday.setDate(currentViewMonday.getDate() - 7); renderGlobalWeek(currentViewMonday); };
         document.getElementById('gNextWeekBtn').onclick = () => { currentViewMonday.setDate(currentViewMonday.getDate() + 7); renderGlobalWeek(currentViewMonday); };
 
-        window.onload = () => { document.getElementById('noticeModal').style.display = 'flex'; };
+        window.onload = () => { startSync(); document.getElementById('noticeModal').style.display = 'flex'; };
     </script>
 </body>
 </html>
