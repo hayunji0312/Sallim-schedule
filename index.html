@@ -55,7 +55,6 @@
         .modal-content { background-color: var(--card-bg); color: var(--text-color); padding: 30px; border-radius: 12px; width: 340px; text-align: center; box-shadow: 0 4px 20px rgba(0,0,0,0.3); border: 1px solid var(--border-color); max-height: 80vh; overflow-y: auto;}
         .modal-content h2 { margin-top: 0; font-size: 20px; }
         
-        /* ✨ NEW: 사용 설명서 슬라이드 스타일 */
         .guide-slide { display: none; animation: fadeIn 0.3s ease-in-out; text-align: center; min-height: 200px; }
         .guide-slide.active { display: block; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
@@ -171,6 +170,7 @@
         .admin-song-tag { background:#eee; color:#333; padding:2px 6px; border-radius:4px; font-size:11px; margin-right:4px; display:inline-block; margin-top:4px;}
         .admin-song-del { color:#d9534f; cursor:pointer; font-weight:bold; margin-left:3px;}
 
+        /* --- 📱 모바일 반응형 CSS 수정 --- */
         @media (max-width: 768px) {
             #teamScreen, .setup-container, .main-header, .content-wrapper { max-width: 95%; }
             .team-grid { grid-template-columns: 1fr; } 
@@ -182,6 +182,11 @@
             .title-row { display: flex; justify-content: center; flex-wrap: wrap; gap: 8px; width: 100%;}
             #editTeamBtn, #openAddSongBtn, #deleteTeamBtn { padding: 6px 12px; font-size: 12px; margin: 0; }
             #summaryBtn { font-size: 13px; padding: 8px 15px; }
+            
+            /* ✨ UPDATE: 날짜와 화살표를 모바일에서 무조건 한 줄에 고정 */
+            .week-nav { flex-wrap: nowrap; gap: 8px; justify-content: center; }
+            .current-week-label { width: auto; font-size: 14px; margin: 0; white-space: nowrap; }
+            .week-nav button { padding: 6px 12px; font-size: 14px; }
             
             table th, table td { width: 60px; font-size: 12px; }
             th .date-sub { font-size: 10px; }
@@ -571,6 +576,9 @@
         let currentTeamId = null; let currentViewMonday = null; let activeUser = null; 
         let isDragging = false; let isErasing = false; let isEditMode = false; let editingTeamId = null; let editingUserId = null;
         let summaryMode = 'member'; 
+        
+        // ✨ NEW: 고스트 클릭 방어막
+        let isTouch = false;
 
         // --- Firebase 실시간 동기화 함수 ---
         function startSync() {
@@ -625,6 +633,7 @@
 
         // --- 모바일 및 PC 드래그 종료 시 1번만 저장 ---
         async function endDrag() {
+            setTimeout(() => { isTouch = false; }, 300); // ✨ UPDATE: 고스트 클릭 방어막 해제 딜레이
             if(isDragging && currentTeamId) { isDragging = false; await saveTeam(currentTeamId); } 
             else { isDragging = false; }
         }
@@ -638,7 +647,6 @@
             document.getElementById(screenId).style.display = (screenId === 'mainScreen' || screenId === 'globalScreen') ? 'flex' : 'block';
         }
 
-        // ✨ NEW: 사용 설명서 슬라이드 로직
         let currentGuideSlide = 0;
         const guideSlides = document.querySelectorAll('.guide-slide');
         const guidePageIndicator = document.getElementById('guidePageIndicator');
@@ -647,35 +655,17 @@
 
         function updateGuideModal() {
             guideSlides.forEach((slide, index) => {
-                if (index === currentGuideSlide) {
-                    slide.classList.add('active');
-                } else {
-                    slide.classList.remove('active');
-                }
+                if (index === currentGuideSlide) { slide.classList.add('active'); } else { slide.classList.remove('active'); }
             });
             guidePageIndicator.innerText = `${currentGuideSlide + 1} / ${guideSlides.length}`;
-            guidePrevBtn.disabled = currentGuideSlide === 0;
-            guideNextBtn.disabled = currentGuideSlide === guideSlides.length - 1;
-            guidePrevBtn.style.opacity = currentGuideSlide === 0 ? '0.3' : '1';
-            guideNextBtn.style.opacity = currentGuideSlide === guideSlides.length - 1 ? '0.3' : '1';
+            guidePrevBtn.disabled = currentGuideSlide === 0; guideNextBtn.disabled = currentGuideSlide === guideSlides.length - 1;
+            guidePrevBtn.style.opacity = currentGuideSlide === 0 ? '0.3' : '1'; guideNextBtn.style.opacity = currentGuideSlide === guideSlides.length - 1 ? '0.3' : '1';
         }
 
-        document.getElementById('showGuideBtn').onclick = () => {
-            currentGuideSlide = 0;
-            updateGuideModal();
-            document.getElementById('guideModal').style.display = 'flex';
-        };
-
+        document.getElementById('showGuideBtn').onclick = () => { currentGuideSlide = 0; updateGuideModal(); document.getElementById('guideModal').style.display = 'flex'; };
         document.getElementById('closeGuideBtn').onclick = () => { document.getElementById('guideModal').style.display = 'none'; };
-
-        guidePrevBtn.onclick = () => {
-            if (currentGuideSlide > 0) { currentGuideSlide--; updateGuideModal(); }
-        };
-
-        guideNextBtn.onclick = () => {
-            if (currentGuideSlide < guideSlides.length - 1) { currentGuideSlide++; updateGuideModal(); }
-        };
-        // ------------------------------------------
+        guidePrevBtn.onclick = () => { if (currentGuideSlide > 0) { currentGuideSlide--; updateGuideModal(); } };
+        guideNextBtn.onclick = () => { if (currentGuideSlide < guideSlides.length - 1) { currentGuideSlide++; updateGuideModal(); } };
 
         const themeBtn = document.getElementById('themeToggleBtn'); const themePopup = document.getElementById('themePopup');
         themeBtn.onclick = (e) => { e.stopPropagation(); themePopup.style.display = themePopup.style.display === 'flex' ? 'none' : 'flex'; };
@@ -692,10 +682,7 @@
             };
         });
 
-        document.getElementById('shareLinkBtn').onclick = () => {
-            navigator.clipboard.writeText(window.location.href).then(() => { alert("✨ 사이트 링크가 복사되었습니다!\n카카오톡 단톡방에 붙여넣기 해서 부원들을 초대하세요."); });
-        };
-
+        document.getElementById('shareLinkBtn').onclick = () => { navigator.clipboard.writeText(window.location.href).then(() => { alert("✨ 사이트 링크가 복사되었습니다!\n카카오톡 단톡방에 붙여넣기 해서 부원들을 초대하세요."); }); };
         document.getElementById('closeNoticeBtn').onclick = () => { renderTeamList(); showScreen('teamScreen'); };
         document.getElementById('showNoticeBtn').onclick = () => { document.getElementById('noticeModal').style.display = 'flex'; };
 
@@ -1127,7 +1114,9 @@
                     for (let day = 0; day < 7; day++) {
                         const td = document.createElement('td'); td.className = 'cell'; td.dataset.time = timeStr; td.dataset.dayIndex = day; 
                         
+                        // ✨ UPDATE: 고스트 클릭 차단 로직 적용
                         td.addEventListener('mousedown', function(e) {
+                            if (isTouch) return; // 🛑 모바일에서 터치 후 따라오는 가짜 마우스 이벤트 무시!
                             e.preventDefault(); if(this.classList.contains('disabled') || this.classList.contains('locked')) return; 
                             isDragging = true; const key = this.dataset.key; const teamData = teamsDB[currentTeamId].scheduleData;
                             if(!teamData[key]) teamData[key] = new Set();
@@ -1144,12 +1133,13 @@
                         }); 
                         
                         td.addEventListener('touchstart', function(e) {
+                            isTouch = true; // ✨ 터치했음을 알림
                             if(this.classList.contains('disabled') || this.classList.contains('locked')) return; 
                             isDragging = true; const key = this.dataset.key; const teamData = teamsDB[currentTeamId].scheduleData;
                             if(!teamData[key]) teamData[key] = new Set();
                             if (teamData[key].has(activeUser.id)) { isErasing = true; teamData[key].delete(activeUser.id); } else { isErasing = false; teamData[key].add(activeUser.id); } 
                             updateCellUI(this);
-                        });
+                        }, {passive: true});
 
                         td.addEventListener('touchmove', function(e) {
                             if (!isDragging) return;
@@ -1163,7 +1153,7 @@
                                 if (isErasing && currentlyHas) { teamData[key].delete(activeUser.id); updateCellUI(targetElement); } 
                                 else if (!isErasing && !currentlyHas) { teamData[key].add(activeUser.id); updateCellUI(targetElement); }
                             }
-                        });
+                        }, {passive: true});
 
                         tr.appendChild(td);
                     } scheduleBody.appendChild(tr);
