@@ -228,24 +228,24 @@
             <div id="guideSlidesContainer" style="margin: 20px 0;">
                 <div class="guide-slide active">
                     <h3>1. 내 이름으로 입장하기</h3>
-                    <div style="background:#eee; height:120px; border-radius:8px; margin-bottom:10px; display:flex; align-items:center; justify-content:center; color:#888;">
-                        [여기에 1번 사진을 넣으세요]
+                    <div style="height:200px; border-radius:8px; margin-bottom:10px; display:flex; align-items:center; justify-content:center; overflow:hidden; border: 1px solid var(--border-color);">
+                        <img src="guide/enter.png" alt="내 이름으로 입장하기 가이드" style="height:100%; width:auto; max-width:100%; object-fit: contain;">
                     </div>
-                    <p style="font-size: 14px; opacity: 0.8; line-height: 1.5;">본인 이름과 세션을 확인하고 입장하세요.<br>다른 사람의 계정으로 들어가면 안 돼요!</p>
+                    <p style="font-size: 14px; opacity: 0.8; line-height: 1.5;">반드시 본인의 이름과 세션을 확인하고 입장하세요.<br>매너 있게 본인의 일정만 관리하기로 해요! 👀✨</p>
                 </div>
                 <div class="guide-slide">
                     <h3>2. 시간표 드래그 입력</h3>
-                    <div style="background:#eee; height:120px; border-radius:8px; margin-bottom:10px; display:flex; align-items:center; justify-content:center; color:#888;">
-                        [여기에 2번 사진을 넣으세요]
+                    <div style="height:200px; border-radius:8px; margin-bottom:10px; display:flex; align-items:center; justify-content:center; overflow:hidden; border: 1px solid var(--border-color);">
+                        <img src="guide/drag.png" alt="시간표 드래그 입력 가이드" style="height:100%; width:auto; max-width:100%; object-fit: contain;">
                     </div>
-                    <p style="font-size: 14px; opacity: 0.8; line-height: 1.5;">가능한 시간을 <b>드래그</b>해서 색칠하세요.<br>모바일은 손가락으로 쓱- 문지르면 됩니다.</p>
+                    <p style="font-size: 14px; opacity: 0.8; line-height: 1.5;">가능한 시간을 <b>손가락이나 마우스로 드래그</b>해서 색칠하세요.<br>버벅임 없이 아주 매끄럽게 색칠됩니다! (한 칸만 터치도 가능)</p>
                 </div>
                 <div class="guide-slide">
-                    <h3>3. 곡 관리 및 요약</h3>
-                    <div style="background:#eee; height:120px; border-radius:8px; margin-bottom:10px; display:flex; align-items:center; justify-content:center; color:#888;">
-                        [여기에 3번 사진을 넣으세요]
+                    <h3>3. 우리 언제 만날까... <<</h3>
+                    <div style="height:200px; border-radius:8px; margin-bottom:10px; display:flex; align-items:center; justify-content:center; overflow:hidden; border: 1px solid var(--border-color);">
+                        <img src="guide/summary.png" alt="모임 시간 요약 가이드" style="height:100%; width:auto; max-width:100%; object-fit: contain;">
                     </div>
-                    <p style="font-size: 14px; opacity: 0.8; line-height: 1.5;">합주곡을 등록하고, <b>[우리 언제 만날까]</b> 버튼을 눌러<br>모두가 모일 수 있는 완벽한 시간을 찾아보세요!</p>
+                    <p style="font-size: 14px; opacity: 0.8; line-height: 1.5;">상단의 버튼을 눌러 모두가 모일 수 있는 완벽한 시간을 찾으세요!<br>결과 화면의 시간을 <b>터치</b>하면 합주실 예약도 가능합니다 ☕</p>
                 </div>
             </div>
 
@@ -262,7 +262,7 @@
     <div id="noticeModal" class="modal-overlay" style="display: none;">
         <div class="modal-content">
             <h2>🎸 살림 합주 공지</h2>
-            <p id="noticeText" style="color:var(--text-color); opacity: 0.8;">초기 배포 버전! 사실 아직 공지할 건 없습니다. v1.0.0<br><br><b>💡 Tip:</b> 요약 기능에서 나온 시간을 <b>클릭(터치)</b>하면 전체 합주실을 선점할 수 있습니다!</p>
+            <p id="noticeText" style="color:var(--text-color); opacity: 0.8;">합주 일정은 매주 일요일 자정까지 모두 입력해 주시기 바랍니다!<br><br><b>💡 Tip:</b> 요약 기능에서 나온 시간을 <b>클릭(터치)</b>하면 전체 합주실을 선점할 수 있습니다!</p>
             <button class="btn" id="closeNoticeBtn">확인</button>
         </div>
     </div>
@@ -271,7 +271,7 @@
         <div class="modal-content" style="width: 350px; max-width: 90%;">
             <h2>🚪 누구로 입장하시겠습니까?</h2>
             <p style="font-size: 12px; color: #d9534f; font-weight: bold; margin-bottom: 5px;">⚠️ 시스템 기록이 영구 보존됩니다!</p>
-            <p style="font-size: 12px; opacity:0.8; margin-top: 0; line-height:1.4;">반드시 본인 이름으로 입장하세요.<br>누가 남의 일정을 건드렸는지 시스템에 다 남는답니다. 우리 매너 있게 본인 일정만 관리하기로 해요! 👀✨</p>
+            <p style="font-size: 12px; opacity:0.8; margin-top: 0; line-height:1.4;">반드시 본인 이름으로 입장하세요.<br>누가 남의 일정을 건드렸는지 시스템에 다 남는답니다! 👀✨</p>
             <div id="identityUserList"></div>
             <button class="cancel-btn" id="cancelIdentityBtn" style="margin-top: 15px; width: 100%;">목록으로 돌아가기</button>
         </div>
