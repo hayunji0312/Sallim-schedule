@@ -55,6 +55,11 @@
         .modal-content { background-color: var(--card-bg); color: var(--text-color); padding: 30px; border-radius: 12px; width: 340px; text-align: center; box-shadow: 0 4px 20px rgba(0,0,0,0.3); border: 1px solid var(--border-color); max-height: 80vh; overflow-y: auto;}
         .modal-content h2 { margin-top: 0; font-size: 20px; }
         
+        /* ✨ NEW: 사용 설명서 슬라이드 스타일 */
+        .guide-slide { display: none; animation: fadeIn 0.3s ease-in-out; text-align: center; min-height: 200px; }
+        .guide-slide.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+
         .member-checkbox-list { display: flex; flex-direction: column; gap: 8px; text-align: left; margin: 10px 0 20px 0; max-height: 150px; overflow-y: auto; padding: 10px; border: 1px solid var(--border-color); border-radius: 8px; background: var(--bg-color); }
         .member-checkbox-list label { display: flex; align-items: center; gap: 10px; cursor: pointer; font-size: 14px; }
         #identityUserList { display: flex; flex-direction: column; gap: 8px; margin-top: 15px; max-height: 200px; overflow-y: auto; padding: 5px; }
@@ -92,22 +97,18 @@
         .title-area { display: flex; flex-direction: column; align-items: center; gap: 15px; width: 100%; margin-top: 30px;}
         .main-title-text { font-size: 28px; margin: 0; width: 100%; }
         
-        /* 📱 UPDATE: 버튼 3개 컨테이너 가로 나열 및 중앙 정렬 */
         .title-row { display: flex; align-items: center; justify-content: center; gap: 10px; flex-wrap: wrap; width: 100%;}
         #editTeamBtn { background-color: transparent; color: var(--text-color); border: 1px solid var(--border-color); padding: 8px 15px; border-radius: 6px; font-size: 13px; cursor: pointer; font-weight: bold; transition: 0.2s; }
         #editTeamBtn:hover { background-color: var(--border-color); }
         #deleteTeamBtn { margin: 0; }
         
-        /* 📱 UPDATE: '우리 언제 만날까' 버튼은 아래 행 중앙 배치 */
         #summaryBtn { background-color: var(--btn-bg); color: var(--btn-text); border: none; padding: 10px 20px; border-radius: 20px; font-size: 14px; font-weight: bold; cursor: pointer; transition: 0.2s; box-shadow: 0 2px 5px rgba(0,0,0,0.1); margin-top: 5px; }
         #summaryBtn:hover { transform: scale(1.05); }
 
         .content-wrapper { display: flex; flex-direction: column; align-items: center; width: 100%; max-width: 900px;}
         
-        /* 📱 UPDATE: 가Table 스크롤을 위한 컨테이너 */
-        .schedule-section { display: flex; flex-direction: column; align-items: center; width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch;} /* 모바일 스크롤 부드럽게 */
+        .schedule-section { display: flex; flex-direction: column; align-items: center; width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch;}
         
-        /* 📱 UPDATE: 가Table 스크롤바 디자인 */
         .schedule-section::-webkit-scrollbar { height: 8px; }
         .schedule-section::-webkit-scrollbar-track { background: var(--bg-color); border-radius: 4px; }
         .schedule-section::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 4px; }
@@ -124,7 +125,6 @@
         .room-tab.active { border-color: var(--btn-bg); background: var(--btn-bg); color: var(--btn-text); opacity: 1; }
         .room-tab:hover:not(.active) { opacity: 0.8; }
 
-        /* 📱 UPDATE: 가Table 아래 멤버 목록 나열 */
         .user-selection { display: flex; gap: 10px; margin-top: 20px; flex-wrap: wrap; justify-content: center; width: 100%; }
         .user-btn { display: flex; align-items: center; gap: 10px; padding: 10px 15px; border: 1px solid var(--border-color); border-radius: 8px; cursor: pointer; background-color: var(--card-bg); color: var(--text-color); font-size: 14px; transition: 0.2s; user-select: none; position: relative; }
         .user-btn:hover { background-color: var(--border-color); }
@@ -143,7 +143,7 @@
         th { background-color: var(--table-header-bg); padding: 10px 0; font-size: 14px; border-bottom: 2px solid var(--table-border-dark); }
         .date-sub { display: block; font-size: 11px; opacity: 0.7; margin-top: 3px; font-weight: normal; }
         .time-label { width: 60px; font-size: 12px; opacity: 0.8; border: none; background-color: transparent; text-align: right; padding-right: 10px; border-right: 2px solid var(--table-border-dark); }
-        .cell { height: 25px; cursor: pointer; padding: 0; vertical-align: top; touch-action: pan-y; /* 모바일 드래그 시 스크롤 버벅거림 개선 */ }
+        .cell { height: 25px; cursor: pointer; padding: 0; vertical-align: top; touch-action: pan-y; }
         
         .cell::after { content: attr(data-tooltip); position: absolute; bottom: 110%; left: 50%; transform: translateX(-50%); white-space: nowrap; background-color: rgba(0, 0, 0, 0.85); color: white; padding: 5px 10px; border-radius: 4px; font-size: 11px; opacity: 0; visibility: hidden; transition: opacity 0.2s; z-index: 10; pointer-events: none; }
         .cell[data-tooltip]:hover::after { opacity: 1; visibility: visible; }
@@ -171,16 +171,14 @@
         .admin-song-tag { background:#eee; color:#333; padding:2px 6px; border-radius:4px; font-size:11px; margin-right:4px; display:inline-block; margin-top:4px;}
         .admin-song-del { color:#d9534f; cursor:pointer; font-weight:bold; margin-left:3px;}
 
-        /* --- 📱 모바일 반응형 CSS 수정 --- */
         @media (max-width: 768px) {
             #teamScreen, .setup-container, .main-header, .content-wrapper { max-width: 95%; }
             .team-grid { grid-template-columns: 1fr; } 
             
-            .main-header { padding-top: 50px; } /* 뒤로가기 버튼 공간 확보 */
+            .main-header { padding-top: 50px; } 
             .back-btn { top: 10px; left: 10px; }
             .main-title-text { font-size: 24px; }
             
-            /* 버튼 컨테이너를 가로 나열로 유지 (화면 넘치면 줄 바꿈) */
             .title-row { display: flex; justify-content: center; flex-wrap: wrap; gap: 8px; width: 100%;}
             #editTeamBtn, #openAddSongBtn, #deleteTeamBtn { padding: 6px 12px; font-size: 12px; margin: 0; }
             #summaryBtn { font-size: 13px; padding: 8px 15px; }
@@ -195,7 +193,7 @@
             .setup-container .input-group input[type="text"], .setup-container .input-group input[type="password"], .setup-container .input-group select, .setup-container .input-group input[type="date"] { width: 100%; box-sizing: border-box; }
             
             #adminBtn { position: static; margin-bottom: 15px; display: inline-block; }
-            #gScheduleTable { table-layout: fixed; } /* 전체 표 레이아웃 조정 */
+            #gScheduleTable { table-layout: fixed; }
         }
     </style>
 </head>
@@ -207,6 +205,44 @@
         <button class="theme-option" data-theme="theme-wood">🪵 어쿠스틱 우드</button>
         <button class="theme-option" data-theme="theme-dark">🌙 미드나잇 다크</button>
         <button class="theme-option" data-theme="theme-blue">🌊 오션 블루</button>
+    </div>
+
+    <div id="guideModal" class="modal-overlay" style="display: none;">
+        <div class="modal-content" style="width: 400px; max-width: 90%;">
+            <h2>📖 살림 이용 가이드</h2>
+            
+            <div id="guideSlidesContainer" style="margin: 20px 0;">
+                <div class="guide-slide active">
+                    <h3>1. 내 이름으로 입장하기</h3>
+                    <div style="background:#eee; height:120px; border-radius:8px; margin-bottom:10px; display:flex; align-items:center; justify-content:center; color:#888;">
+                        [여기에 1번 사진을 넣으세요]
+                    </div>
+                    <p style="font-size: 14px; opacity: 0.8; line-height: 1.5;">본인 이름과 세션을 확인하고 입장하세요.<br>다른 사람의 계정으로 들어가면 안 돼요!</p>
+                </div>
+                <div class="guide-slide">
+                    <h3>2. 시간표 드래그 입력</h3>
+                    <div style="background:#eee; height:120px; border-radius:8px; margin-bottom:10px; display:flex; align-items:center; justify-content:center; color:#888;">
+                        [여기에 2번 사진을 넣으세요]
+                    </div>
+                    <p style="font-size: 14px; opacity: 0.8; line-height: 1.5;">가능한 시간을 <b>드래그</b>해서 색칠하세요.<br>모바일은 손가락으로 쓱- 문지르면 됩니다.</p>
+                </div>
+                <div class="guide-slide">
+                    <h3>3. 곡 관리 및 요약</h3>
+                    <div style="background:#eee; height:120px; border-radius:8px; margin-bottom:10px; display:flex; align-items:center; justify-content:center; color:#888;">
+                        [여기에 3번 사진을 넣으세요]
+                    </div>
+                    <p style="font-size: 14px; opacity: 0.8; line-height: 1.5;">합주곡을 등록하고, <b>[우리 언제 만날까]</b> 버튼을 눌러<br>모두가 모일 수 있는 완벽한 시간을 찾아보세요!</p>
+                </div>
+            </div>
+
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <button id="guidePrevBtn" class="btn" style="padding: 8px 15px;">◀</button>
+                <span id="guidePageIndicator" style="font-size: 14px; font-weight: bold;">1 / 3</span>
+                <button id="guideNextBtn" class="btn" style="padding: 8px 15px;">▶</button>
+            </div>
+            
+            <button class="cancel-btn" id="closeGuideBtn" style="width: 100%;">가이드 닫기</button>
+        </div>
     </div>
 
     <div id="noticeModal" class="modal-overlay">
@@ -275,7 +311,7 @@
     <div id="adminDashboardModal" class="modal-overlay" style="display: none;">
         <div class="modal-content" style="width: 400px; max-width: 90%;">
             <h2>⚙️ 관리자 대시보드</h2>
-            <div class="summary-tabs" style="margin-bottom: 20px;">
+            <div class="summary-tabs" style="margin-bottom: 20px; flex-wrap: wrap;">
                 <button class="s-tab active" id="adminTabTeams">팀/곡 관리</button>
                 <button class="s-tab" id="adminTabLocks">공식 일정 (잠금)</button>
                 <button class="s-tab" id="adminTabSettings">설정</button>
@@ -407,10 +443,13 @@
         <button id="adminBtn">⚙️ 관리자 모드</button>
         <h1>🎸 살림 합주 일정</h1>
         <p style="font-size: 13px; opacity:0.7; margin-top:-5px; margin-bottom:20px;">팀 생성 현황: <span id="teamCountText" style="font-weight:bold;">0</span> / 6</p>
+        
         <div class="notice-btn-wrap">
-            <button id="showNoticeBtn" class="cancel-btn">📢 공지사항 보기</button>
-            <button id="shareLinkBtn" class="kakao-btn">💬 단톡방 링크 복사</button>
+            <button id="showNoticeBtn" class="cancel-btn">📢 공지사항</button>
+            <button id="showGuideBtn" class="btn" style="background-color: var(--btn-bg);">📖 사용 설명서</button>
+            <button id="shareLinkBtn" class="kakao-btn">💬 링크 복사</button>
         </div>
+        
         <div style="margin-bottom: 30px;">
             <button id="globalScheduleBtn" class="btn" style="width:100%;">📅 살림 전체 합주실 예약 현황 보기</button>
         </div>
@@ -584,7 +623,7 @@
             await db.collection("system").doc("locks").set(globalLocks);
         }
 
-        // --- 모바일 및 PC 드래그 종료 시 1번만 저장 (최적화) ---
+        // --- 모바일 및 PC 드래그 종료 시 1번만 저장 ---
         async function endDrag() {
             if(isDragging && currentTeamId) { isDragging = false; await saveTeam(currentTeamId); } 
             else { isDragging = false; }
@@ -598,6 +637,45 @@
             document.getElementById('mainScreen').style.display = 'none'; document.getElementById('globalScreen').style.display = 'none';
             document.getElementById(screenId).style.display = (screenId === 'mainScreen' || screenId === 'globalScreen') ? 'flex' : 'block';
         }
+
+        // ✨ NEW: 사용 설명서 슬라이드 로직
+        let currentGuideSlide = 0;
+        const guideSlides = document.querySelectorAll('.guide-slide');
+        const guidePageIndicator = document.getElementById('guidePageIndicator');
+        const guidePrevBtn = document.getElementById('guidePrevBtn');
+        const guideNextBtn = document.getElementById('guideNextBtn');
+
+        function updateGuideModal() {
+            guideSlides.forEach((slide, index) => {
+                if (index === currentGuideSlide) {
+                    slide.classList.add('active');
+                } else {
+                    slide.classList.remove('active');
+                }
+            });
+            guidePageIndicator.innerText = `${currentGuideSlide + 1} / ${guideSlides.length}`;
+            guidePrevBtn.disabled = currentGuideSlide === 0;
+            guideNextBtn.disabled = currentGuideSlide === guideSlides.length - 1;
+            guidePrevBtn.style.opacity = currentGuideSlide === 0 ? '0.3' : '1';
+            guideNextBtn.style.opacity = currentGuideSlide === guideSlides.length - 1 ? '0.3' : '1';
+        }
+
+        document.getElementById('showGuideBtn').onclick = () => {
+            currentGuideSlide = 0;
+            updateGuideModal();
+            document.getElementById('guideModal').style.display = 'flex';
+        };
+
+        document.getElementById('closeGuideBtn').onclick = () => { document.getElementById('guideModal').style.display = 'none'; };
+
+        guidePrevBtn.onclick = () => {
+            if (currentGuideSlide > 0) { currentGuideSlide--; updateGuideModal(); }
+        };
+
+        guideNextBtn.onclick = () => {
+            if (currentGuideSlide < guideSlides.length - 1) { currentGuideSlide++; updateGuideModal(); }
+        };
+        // ------------------------------------------
 
         const themeBtn = document.getElementById('themeToggleBtn'); const themePopup = document.getElementById('themePopup');
         themeBtn.onclick = (e) => { e.stopPropagation(); themePopup.style.display = themePopup.style.display === 'flex' ? 'none' : 'flex'; };
@@ -1023,7 +1101,6 @@
                 const btn = document.createElement('div'); btn.className = 'user-btn';
                 if (user.id === activeUser.id) { btn.classList.add('active'); } else { btn.style.opacity = '0.5'; }
                 
-                // 📱 모바일 최적화: ✏️ 버튼 추가
                 btn.innerHTML = `<div class="color-circle" style="background-color: ${user.color};"></div> <span class="name-text" title="${user.name}"><span>${user.emoji}</span> ${user.name}</span> <span class="edit-profile-btn">✏️</span>`;
                 
                 btn.onclick = (e) => { 
@@ -1050,7 +1127,6 @@
                     for (let day = 0; day < 7; day++) {
                         const td = document.createElement('td'); td.className = 'cell'; td.dataset.time = timeStr; td.dataset.dayIndex = day; 
                         
-                        // PC 마우스 드래그 이벤트 (최적화)
                         td.addEventListener('mousedown', function(e) {
                             e.preventDefault(); if(this.classList.contains('disabled') || this.classList.contains('locked')) return; 
                             isDragging = true; const key = this.dataset.key; const teamData = teamsDB[currentTeamId].scheduleData;
@@ -1067,7 +1143,6 @@
                             }
                         }); 
                         
-                        // 📱 모바일 터치 드래그 이벤트 (터치 시 스크롤 버벅거림 개선)
                         td.addEventListener('touchstart', function(e) {
                             if(this.classList.contains('disabled') || this.classList.contains('locked')) return; 
                             isDragging = true; const key = this.dataset.key; const teamData = teamsDB[currentTeamId].scheduleData;
@@ -1135,7 +1210,7 @@
             const team = teamsDB[currentTeamId]; const cellSet = team.scheduleData[td.dataset.key]; if (!cellSet || cellSet.size === 0) return;
             const usersInCell = Array.from(cellSet).map(id => team.users.find(u => u.id === id)).filter(u => u !== undefined).sort((a, b) => a.id - b.id);
             if (usersInCell.length === 0) return;
-            const innerBox = document.createElement('div'); innerBox.style.display = 'flex'; innerBox.style.width = '100%'; innerBox.style.height = '100%'; innerBox.style.pointerEvents = 'none'; // 터치 간섭 방지
+            const innerBox = document.createElement('div'); innerBox.style.display = 'flex'; innerBox.style.width = '100%'; innerBox.style.height = '100%'; innerBox.style.pointerEvents = 'none'; 
             const widthPerUser = 100 / usersInCell.length;
             usersInCell.forEach(u => { const bar = document.createElement('div'); bar.style.width = `${widthPerUser}%`; bar.style.height = '100%'; bar.style.backgroundColor = u.color; innerBox.appendChild(bar); });
             td.appendChild(innerBox);
