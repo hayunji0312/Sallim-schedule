@@ -89,7 +89,7 @@
         .setup-btns { display: flex; justify-content: center; gap: 10px; margin-top: 30px; }
 
         .schedule-screen { display: none; flex-direction: column; align-items: center; padding: 40px 20px; width: 100%; box-sizing: border-box;}
-        .main-header { display: flex; flex-direction: column; align-items: center; gap: 15px; width: 100%; max-width: 900px; margin-bottom: 30px; text-align: center; position: relative;}
+        .main-header { display: flex; flex-direction: column; align-items: center; gap: 15px; width: 100%; max-width: 1000px; margin-bottom: 30px; text-align: center; position: relative;}
         .back-btn { background: none; border: none; font-size: 15px; font-weight: bold; color: var(--text-color); cursor: pointer; display: flex; align-items: center; gap: 5px; opacity: 0.7; position: absolute; left: 0; top: 0; }
         .back-btn:hover { opacity: 1; text-decoration: underline; }
         
@@ -104,8 +104,8 @@
         #summaryBtn { background-color: var(--btn-bg); color: var(--btn-text); border: none; padding: 10px 20px; border-radius: 20px; font-size: 14px; font-weight: bold; cursor: pointer; transition: 0.2s; box-shadow: 0 2px 5px rgba(0,0,0,0.1); margin-top: 5px; }
         #summaryBtn:hover { transform: scale(1.05); }
 
-        .content-wrapper { display: flex; flex-direction: column; align-items: center; width: 100%; max-width: 900px;}
-        
+        /* ✨ UPDATE: PC에서는 가로(row)로, 유저 목록을 우측에 고정! */
+        .content-wrapper { display: flex; flex-direction: row; gap: 50px; align-items: flex-start; justify-content: center; width: 100%; max-width: 1000px;}
         .schedule-section { display: flex; flex-direction: column; align-items: center; width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch;}
         
         .schedule-section::-webkit-scrollbar { height: 8px; }
@@ -124,17 +124,18 @@
         .room-tab.active { border-color: var(--btn-bg); background: var(--btn-bg); color: var(--btn-text); opacity: 1; }
         .room-tab:hover:not(.active) { opacity: 0.8; }
 
-        .user-selection { display: flex; gap: 10px; margin-top: 20px; flex-wrap: wrap; justify-content: center; width: 100%; }
+        /* ✨ UPDATE: PC에서는 세로(column) 나열로 우측 고정 */
+        .user-selection { display: flex; flex-direction: column; gap: 10px; margin-top: 65px; min-width: 180px; flex-shrink: 0; }
         .user-btn { display: flex; align-items: center; gap: 10px; padding: 10px 15px; border: 1px solid var(--border-color); border-radius: 8px; cursor: pointer; background-color: var(--card-bg); color: var(--text-color); font-size: 14px; transition: 0.2s; user-select: none; position: relative; }
         .user-btn:hover { background-color: var(--border-color); }
         .user-btn.active { border-color: var(--table-border-dark); box-shadow: 0 0 0 2px var(--table-border-dark); font-weight: bold; transform: scale(1.05); }
         .color-circle { width: 16px; height: 16px; border-radius: 50%; border: 1px solid rgba(0,0,0,0.2); flex-shrink: 0; transition: background-color 0.3s; }
         .name-text { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: flex; gap: 5px; align-items: center;}
         
-        .edit-profile-btn { margin-left: 5px; font-size: 12px; opacity: 0.6; cursor: pointer; padding: 2px 5px; border-radius: 4px; }
+        .edit-profile-btn { margin-left: auto; font-size: 12px; opacity: 0.6; cursor: pointer; padding: 2px 5px; border-radius: 4px; }
         .edit-profile-btn:hover { background-color: rgba(0,0,0,0.1); opacity: 1; }
 
-        #checkUnvotedBtn { background: transparent; border: 1px dashed var(--border-color); color: var(--text-color); padding: 5px 10px; border-radius: 6px; font-size: 12px; cursor: pointer; margin-bottom: 10px; opacity: 0.8; }
+        #checkUnvotedBtn { background: transparent; border: 1px dashed var(--border-color); color: var(--text-color); padding: 5px 10px; border-radius: 6px; font-size: 12px; cursor: pointer; margin-bottom: 10px; opacity: 0.8; text-align: center; }
         #checkUnvotedBtn:hover { opacity: 1; border-style: solid; }
 
         table { border-collapse: collapse; border: 2px solid var(--table-border-dark); user-select: none; table-layout: fixed; margin-left: auto; margin-right: auto;}
@@ -170,7 +171,7 @@
         .admin-song-tag { background:#eee; color:#333; padding:2px 6px; border-radius:4px; font-size:11px; margin-right:4px; display:inline-block; margin-top:4px;}
         .admin-song-del { color:#d9534f; cursor:pointer; font-weight:bold; margin-left:3px;}
 
-        /* --- 📱 모바일 반응형 CSS 수정 --- */
+        /* --- 📱 모바일 반응형 CSS --- */
         @media (max-width: 768px) {
             #teamScreen, .setup-container, .main-header, .content-wrapper { max-width: 95%; }
             .team-grid { grid-template-columns: 1fr; } 
@@ -179,11 +180,14 @@
             .back-btn { top: 10px; left: 10px; }
             .main-title-text { font-size: 24px; }
             
+            /* ✨ UPDATE: 모바일에서는 다시 가로가 아닌 세로(column) 레이아웃으로 변경! */
+            .content-wrapper { flex-direction: column; gap: 20px; align-items: center; }
+            .user-selection { flex-direction: row; margin-top: 20px; width: 100%; justify-content: center; flex-wrap: wrap; }
+            
             .title-row { display: flex; justify-content: center; flex-wrap: wrap; gap: 8px; width: 100%;}
             #editTeamBtn, #openAddSongBtn, #deleteTeamBtn { padding: 6px 12px; font-size: 12px; margin: 0; }
             #summaryBtn { font-size: 13px; padding: 8px 15px; }
             
-            /* ✨ UPDATE: 날짜와 화살표를 모바일에서 무조건 한 줄에 고정 */
             .week-nav { flex-wrap: nowrap; gap: 8px; justify-content: center; }
             .current-week-label { width: auto; font-size: 14px; margin: 0; white-space: nowrap; }
             .week-nav button { padding: 6px 12px; font-size: 14px; }
@@ -250,7 +254,7 @@
         </div>
     </div>
 
-    <div id="noticeModal" class="modal-overlay">
+    <div id="noticeModal" class="modal-overlay" style="display: none;">
         <div class="modal-content">
             <h2>🎸 살림 합주 공지</h2>
             <p id="noticeText" style="color:var(--text-color); opacity: 0.8;">합주 일정은 매주 일요일 자정까지 모두 입력해 주시기 바랍니다!<br><br><b>💡 Tip:</b> 요약 기능에서 나온 시간을 <b>클릭(터치)</b>하면 전체 합주실을 선점할 수 있습니다!</p>
@@ -459,6 +463,10 @@
             <button id="globalScheduleBtn" class="btn" style="width:100%;">📅 살림 전체 합주실 예약 현황 보기</button>
         </div>
         <div class="team-grid" id="teamGrid"></div>
+        
+        <div style="margin-top: 50px; padding-top: 20px; border-top: 1px dashed var(--border-color);">
+            <button id="donateBtn" class="cancel-btn" style="border-radius: 20px; font-size: 12px; padding: 8px 15px;">☕ 개발자 후원하기</button>
+        </div>
     </div>
 
     <div id="setupScreen" class="setup-container">
@@ -576,8 +584,6 @@
         let currentTeamId = null; let currentViewMonday = null; let activeUser = null; 
         let isDragging = false; let isErasing = false; let isEditMode = false; let editingTeamId = null; let editingUserId = null;
         let summaryMode = 'member'; 
-        
-        // ✨ NEW: 고스트 클릭 방어막
         let isTouch = false;
 
         // --- Firebase 실시간 동기화 함수 ---
@@ -631,9 +637,8 @@
             await db.collection("system").doc("locks").set(globalLocks);
         }
 
-        // --- 모바일 및 PC 드래그 종료 시 1번만 저장 ---
         async function endDrag() {
-            setTimeout(() => { isTouch = false; }, 300); // ✨ UPDATE: 고스트 클릭 방어막 해제 딜레이
+            setTimeout(() => { isTouch = false; }, 300); 
             if(isDragging && currentTeamId) { isDragging = false; await saveTeam(currentTeamId); } 
             else { isDragging = false; }
         }
@@ -681,6 +686,11 @@
                 if (document.getElementById('globalScreen').style.display === 'flex') renderGlobalWeek(currentViewMonday);
             };
         });
+
+        // ✨ NEW: 이스터에그 후원하기 버튼 기능
+        document.getElementById('donateBtn').onclick = () => {
+            alert("이 사이트는 부산대 반도체공학과 하윤지가 제작했습니다.\n지나가다 보이시면 커피 한 잔만 사주십쇼. ☕😎");
+        };
 
         document.getElementById('shareLinkBtn').onclick = () => { navigator.clipboard.writeText(window.location.href).then(() => { alert("✨ 사이트 링크가 복사되었습니다!\n카카오톡 단톡방에 붙여넣기 해서 부원들을 초대하세요."); }); };
         document.getElementById('closeNoticeBtn').onclick = () => { renderTeamList(); showScreen('teamScreen'); };
@@ -1114,9 +1124,8 @@
                     for (let day = 0; day < 7; day++) {
                         const td = document.createElement('td'); td.className = 'cell'; td.dataset.time = timeStr; td.dataset.dayIndex = day; 
                         
-                        // ✨ UPDATE: 고스트 클릭 차단 로직 적용
                         td.addEventListener('mousedown', function(e) {
-                            if (isTouch) return; // 🛑 모바일에서 터치 후 따라오는 가짜 마우스 이벤트 무시!
+                            if (isTouch) return; 
                             e.preventDefault(); if(this.classList.contains('disabled') || this.classList.contains('locked')) return; 
                             isDragging = true; const key = this.dataset.key; const teamData = teamsDB[currentTeamId].scheduleData;
                             if(!teamData[key]) teamData[key] = new Set();
@@ -1133,7 +1142,7 @@
                         }); 
                         
                         td.addEventListener('touchstart', function(e) {
-                            isTouch = true; // ✨ 터치했음을 알림
+                            isTouch = true; 
                             if(this.classList.contains('disabled') || this.classList.contains('locked')) return; 
                             isDragging = true; const key = this.dataset.key; const teamData = teamsDB[currentTeamId].scheduleData;
                             if(!teamData[key]) teamData[key] = new Set();
