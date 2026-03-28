@@ -104,7 +104,6 @@
         #summaryBtn { background-color: var(--btn-bg); color: var(--btn-text); border: none; padding: 10px 20px; border-radius: 20px; font-size: 14px; font-weight: bold; cursor: pointer; transition: 0.2s; box-shadow: 0 2px 5px rgba(0,0,0,0.1); margin-top: 5px; }
         #summaryBtn:hover { transform: scale(1.05); }
 
-        /* ✨ UPDATE: PC에서는 가로(row)로, 유저 목록을 우측에 고정! */
         .content-wrapper { display: flex; flex-direction: row; gap: 50px; align-items: flex-start; justify-content: center; width: 100%; max-width: 1000px;}
         .schedule-section { display: flex; flex-direction: column; align-items: center; width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch;}
         
@@ -124,7 +123,6 @@
         .room-tab.active { border-color: var(--btn-bg); background: var(--btn-bg); color: var(--btn-text); opacity: 1; }
         .room-tab:hover:not(.active) { opacity: 0.8; }
 
-        /* ✨ UPDATE: PC에서는 세로(column) 나열로 우측 고정 */
         .user-selection { display: flex; flex-direction: column; gap: 10px; margin-top: 65px; min-width: 180px; flex-shrink: 0; }
         .user-btn { display: flex; align-items: center; gap: 10px; padding: 10px 15px; border: 1px solid var(--border-color); border-radius: 8px; cursor: pointer; background-color: var(--card-bg); color: var(--text-color); font-size: 14px; transition: 0.2s; user-select: none; position: relative; }
         .user-btn:hover { background-color: var(--border-color); }
@@ -143,7 +141,9 @@
         th { background-color: var(--table-header-bg); padding: 10px 0; font-size: 14px; border-bottom: 2px solid var(--table-border-dark); }
         .date-sub { display: block; font-size: 11px; opacity: 0.7; margin-top: 3px; font-weight: normal; }
         .time-label { width: 60px; font-size: 12px; opacity: 0.8; border: none; background-color: transparent; text-align: right; padding-right: 10px; border-right: 2px solid var(--table-border-dark); }
-        .cell { height: 25px; cursor: pointer; padding: 0; vertical-align: top; touch-action: pan-y; }
+        
+        /* ✨ UPDATE: touch-action: pan-x 추가! 모바일에서 세로 드래그는 앱이 처리, 가로 드래그는 스크롤되도록! */
+        .cell { height: 25px; cursor: pointer; padding: 0; vertical-align: top; touch-action: pan-x; }
         
         .cell::after { content: attr(data-tooltip); position: absolute; bottom: 110%; left: 50%; transform: translateX(-50%); white-space: nowrap; background-color: rgba(0, 0, 0, 0.85); color: white; padding: 5px 10px; border-radius: 4px; font-size: 11px; opacity: 0; visibility: hidden; transition: opacity 0.2s; z-index: 10; pointer-events: none; }
         .cell[data-tooltip]:hover::after { opacity: 1; visibility: visible; }
@@ -180,7 +180,6 @@
             .back-btn { top: 10px; left: 10px; }
             .main-title-text { font-size: 24px; }
             
-            /* ✨ UPDATE: 모바일에서는 다시 가로가 아닌 세로(column) 레이아웃으로 변경! */
             .content-wrapper { flex-direction: column; gap: 20px; align-items: center; }
             .user-selection { flex-direction: row; margin-top: 20px; width: 100%; justify-content: center; flex-wrap: wrap; }
             
@@ -552,7 +551,7 @@
             </div>
         </div>
     </div>
-    <script>
+<script>
         // --- Firebase 초기화 ---
         const firebaseConfig = {
             apiKey: "AIzaSyBmf7TMKhAqERFL3s_yIifUjEFGMWs_mI4",
@@ -584,7 +583,10 @@
         let currentTeamId = null; let currentViewMonday = null; let activeUser = null; 
         let isDragging = false; let isErasing = false; let isEditMode = false; let editingTeamId = null; let editingUserId = null;
         let summaryMode = 'member'; 
+        
+        // ✨ NEW: 고스트 클릭 및 중복 색칠 방어막
         let isTouch = false;
+        let currentDragSession = new Set();
 
         // --- Firebase 실시간 동기화 함수 ---
         function startSync() {
@@ -637,10 +639,12 @@
             await db.collection("system").doc("locks").set(globalLocks);
         }
 
+        // --- ✨ UPDATE: 모바일 및 PC 드래그 종료 최적화 ---
         async function endDrag() {
-            setTimeout(() => { isTouch = false; }, 300); 
+            setTimeout(() => { isTouch = false; }, 500); // 고스트 클릭 방어막
             if(isDragging && currentTeamId) { isDragging = false; await saveTeam(currentTeamId); } 
             else { isDragging = false; }
+            currentDragSession.clear();
         }
         document.addEventListener('mouseup', endDrag);
         document.addEventListener('touchend', endDrag);
@@ -687,7 +691,6 @@
             };
         });
 
-        // ✨ NEW: 이스터에그 후원하기 버튼 기능
         document.getElementById('donateBtn').onclick = () => {
             alert("이 사이트는 부산대 반도체공학과 하윤지가 제작했습니다.\n지나가다 보이시면 커피 한 잔만 사주십쇼. ☕😎");
         };
@@ -1115,6 +1118,28 @@
             });
         }
 
+        // ✨ UPDATE: 깜빡임(중복 색칠) 방지용 함수 분리
+        function startPaint(cell) {
+            if(cell.classList.contains('disabled') || cell.classList.contains('locked')) return; 
+            isDragging = true; currentDragSession.clear();
+            const key = cell.dataset.key; if(!key) return;
+            const teamData = teamsDB[currentTeamId].scheduleData;
+            if(!teamData[key]) teamData[key] = new Set();
+            isErasing = teamData[key].has(activeUser.id);
+            if (isErasing) { teamData[key].delete(activeUser.id); } else { teamData[key].add(activeUser.id); }
+            currentDragSession.add(key); updateCellUI(cell);
+        }
+
+        function paintCell(cell) {
+            if(cell.classList.contains('disabled') || cell.classList.contains('locked')) return; 
+            const key = cell.dataset.key;
+            if(!key || currentDragSession.has(key)) return; // ✨ 같은 세션에 이미 칠한 칸은 패스!
+            const teamData = teamsDB[currentTeamId].scheduleData;
+            if(!teamData[key]) teamData[key] = new Set();
+            if (isErasing) { teamData[key].delete(activeUser.id); } else { teamData[key].add(activeUser.id); }
+            currentDragSession.add(key); updateCellUI(cell);
+        }
+
         function buildTableSkeleton() {
             const scheduleBody = document.getElementById('scheduleBody'); scheduleBody.innerHTML = ''; 
             for (let hour = 9; hour <= 22; hour++) {
@@ -1126,41 +1151,24 @@
                         
                         td.addEventListener('mousedown', function(e) {
                             if (isTouch) return; 
-                            e.preventDefault(); if(this.classList.contains('disabled') || this.classList.contains('locked')) return; 
-                            isDragging = true; const key = this.dataset.key; const teamData = teamsDB[currentTeamId].scheduleData;
-                            if(!teamData[key]) teamData[key] = new Set();
-                            if (teamData[key].has(activeUser.id)) { isErasing = true; teamData[key].delete(activeUser.id); } else { isErasing = false; teamData[key].add(activeUser.id); } 
-                            updateCellUI(this);
+                            e.preventDefault(); 
+                            startPaint(this);
                         });
                         td.addEventListener('mouseenter', function() {
-                            if (isDragging && !this.classList.contains('disabled') && !this.classList.contains('locked')) {
-                                const key = this.dataset.key; const teamData = teamsDB[currentTeamId].scheduleData;
-                                if(!teamData[key]) teamData[key] = new Set();
-                                if (isErasing) { teamData[key].delete(activeUser.id); } else { teamData[key].add(activeUser.id); } 
-                                updateCellUI(this);
-                            }
+                            if (isDragging && !isTouch) paintCell(this);
                         }); 
                         
                         td.addEventListener('touchstart', function(e) {
                             isTouch = true; 
-                            if(this.classList.contains('disabled') || this.classList.contains('locked')) return; 
-                            isDragging = true; const key = this.dataset.key; const teamData = teamsDB[currentTeamId].scheduleData;
-                            if(!teamData[key]) teamData[key] = new Set();
-                            if (teamData[key].has(activeUser.id)) { isErasing = true; teamData[key].delete(activeUser.id); } else { isErasing = false; teamData[key].add(activeUser.id); } 
-                            updateCellUI(this);
+                            startPaint(this);
                         }, {passive: true});
 
                         td.addEventListener('touchmove', function(e) {
                             if (!isDragging) return;
                             const touch = e.touches[0];
                             const targetElement = document.elementFromPoint(touch.clientX, touch.clientY);
-                            if (targetElement && targetElement.classList.contains('cell') && !targetElement.classList.contains('disabled') && !targetElement.classList.contains('locked')) {
-                                const key = targetElement.dataset.key; if (!key) return;
-                                const teamData = teamsDB[currentTeamId].scheduleData;
-                                if(!teamData[key]) teamData[key] = new Set();
-                                const currentlyHas = teamData[key].has(activeUser.id);
-                                if (isErasing && currentlyHas) { teamData[key].delete(activeUser.id); updateCellUI(targetElement); } 
-                                else if (!isErasing && !currentlyHas) { teamData[key].add(activeUser.id); updateCellUI(targetElement); }
+                            if (targetElement && targetElement.classList.contains('cell')) {
+                                paintCell(targetElement);
                             }
                         }, {passive: true});
 
