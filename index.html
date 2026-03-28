@@ -590,7 +590,6 @@
         let isDragging = false; let isErasing = false; let isEditMode = false; let editingTeamId = null; let editingUserId = null;
         let summaryMode = 'member'; 
         
-        // ✨ NEW: 고스트 클릭 및 중복 색칠 방어막
         let isTouch = false;
         let currentDragSession = new Set();
 
@@ -645,9 +644,8 @@
             await db.collection("system").doc("locks").set(globalLocks);
         }
 
-        // --- ✨ UPDATE: 모바일 및 PC 드래그 종료 최적화 ---
         async function endDrag() {
-            setTimeout(() => { isTouch = false; }, 500); // 고스트 클릭 방어막
+            setTimeout(() => { isTouch = false; }, 500); 
             if(isDragging && currentTeamId) { isDragging = false; await saveTeam(currentTeamId); } 
             else { isDragging = false; }
             currentDragSession.clear();
@@ -1124,7 +1122,6 @@
             });
         }
 
-        // ✨ UPDATE: 깜빡임(중복 색칠) 방지용 함수 분리
         function startPaint(cell) {
             if(cell.classList.contains('disabled') || cell.classList.contains('locked')) return; 
             isDragging = true; currentDragSession.clear();
@@ -1139,7 +1136,7 @@
         function paintCell(cell) {
             if(cell.classList.contains('disabled') || cell.classList.contains('locked')) return; 
             const key = cell.dataset.key;
-            if(!key || currentDragSession.has(key)) return; // ✨ 같은 세션에 이미 칠한 칸은 패스!
+            if(!key || currentDragSession.has(key)) return; 
             const teamData = teamsDB[currentTeamId].scheduleData;
             if(!teamData[key]) teamData[key] = new Set();
             if (isErasing) { teamData[key].delete(activeUser.id); } else { teamData[key].add(activeUser.id); }
@@ -1290,7 +1287,35 @@
             }
         });
 
-        window.onload = () => { startSync(); document.getElementById('noticeModal').style.display = 'flex'; };
+        // ✨ NEW: 엔터 키 누르면 지정된 버튼이 클릭되게 해주는 헬퍼 함수
+        function addEnterKeyListener(inputId, buttonId) {
+            const inputElement = document.getElementById(inputId);
+            if(inputElement) {
+                inputElement.addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter') {
+                        e.preventDefault(); 
+                        document.getElementById(buttonId).click();
+                    }
+                });
+            }
+        }
+
+        window.onload = () => { 
+            startSync(); 
+            document.getElementById('noticeModal').style.display = 'flex'; 
+            
+            // ✨ NEW: 팝업창 및 입력창에 엔터키 이벤트 연결
+            addEnterKeyListener('pwInput', 'submitPwBtn'); // 팀 비밀번호 입력창 -> 확인
+            addEnterKeyListener('adminPwInput', 'submitAdminLoginBtn'); // 관리자 로그인 -> 로그인
+            addEnterKeyListener('deletePwInput', 'confirmDeleteBtn'); // 팀 삭제 비번 -> 완전 삭제
+            addEnterKeyListener('deleteConfirmInput', 'confirmDeleteBtn'); // 삭제 타이핑 -> 완전 삭제
+            addEnterKeyListener('newAdminPwInput', 'changeAdminPwBtn'); // 관리자 비번 변경 -> 변경
+            addEnterKeyListener('newSongInput', 'confirmAddSongBtn'); // 곡 추가 -> 추가하기
+            addEnterKeyListener('editUserName', 'saveUserEditBtn'); // 프로필 이름 수정 -> 저장
+            
+            // 팀 생성창 엔터키 연결
+            addEnterKeyListener('teamName', 'startBtn');
+            addEnterKeyListener('teamPassword', 'startBtn');
+            addEnterKeyListener('memberCount', 'startBtn');
+        };
     </script>
-</body>
-</html>
