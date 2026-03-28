@@ -4,6 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>합주 일정 조율</title>
+
+    <meta property="og:title" content="🎸 살림 합주 일정 조율">
+    <meta property="og:description" content="부산대 반도체공학과 하윤지가 제작한 '살림' 합주 일정 조율 및 예약 시스템입니다. ☕">
+    <meta property="og:image" content="https://sallim-schedule.vercel.app/thumbnail.png">
+    <meta property="og:url" content="https://sallim-schedule.vercel.app">
+    <meta property="og:type" content="website">
+    
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
     <style>
@@ -142,7 +149,6 @@
         .date-sub { display: block; font-size: 11px; opacity: 0.7; margin-top: 3px; font-weight: normal; }
         .time-label { width: 60px; font-size: 12px; opacity: 0.8; border: none; background-color: transparent; text-align: right; padding-right: 10px; border-right: 2px solid var(--table-border-dark); }
         
-        /* ✨ UPDATE: touch-action: pan-x 추가! 모바일에서 세로 드래그는 앱이 처리, 가로 드래그는 스크롤되도록! */
         .cell { height: 25px; cursor: pointer; padding: 0; vertical-align: top; touch-action: pan-x; }
         
         .cell::after { content: attr(data-tooltip); position: absolute; bottom: 110%; left: 50%; transform: translateX(-50%); white-space: nowrap; background-color: rgba(0, 0, 0, 0.85); color: white; padding: 5px 10px; border-radius: 4px; font-size: 11px; opacity: 0; visibility: hidden; transition: opacity 0.2s; z-index: 10; pointer-events: none; }
