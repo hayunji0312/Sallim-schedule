@@ -578,7 +578,7 @@
             'theme-blue': ["#0B2B46", "#124068", "#1A568C", "#2470B3", "#3B8FD9", "#69AEE3", "#98C9ED", "#C6E4F6"]
         };
 
-        let teamsDB = {}; let teamIdCounter = 1; const MAX_TEAMS = 6; 
+        let teamsDB = {}; const MAX_TEAMS = 6; 
         let globalReservations = { '살방': {}, '장전문화센터': {} };
         let globalLocks = {}; 
         
@@ -840,11 +840,12 @@
             const team = teamsDB[teamId]; pendingTeamId = teamId; 
             if (!team.password) { openIdentityModal(teamId); return; }
             document.getElementById('pwInput').value = ''; document.getElementById('passwordModal').style.display = 'flex';
+            setTimeout(() => document.getElementById('pwInput').focus(), 100);
         }
         document.getElementById('cancelPwBtn').onclick = () => { document.getElementById('passwordModal').style.display = 'none'; pendingTeamId = null; };
         document.getElementById('submitPwBtn').onclick = () => {
             if (document.getElementById('pwInput').value === teamsDB[pendingTeamId].password) { document.getElementById('passwordModal').style.display = 'none'; openIdentityModal(pendingTeamId); } 
-            else { alert("⚠️ 비밀번호가 틀렸습니다!"); }
+            else { alert("⚠️ 비밀번호가 틀렸습니다!"); document.getElementById('pwInput').value = ''; document.getElementById('pwInput').focus();}
         };
 
         function openIdentityModal(teamId) {
@@ -887,7 +888,8 @@
             } else {
                 const users = [];
                 for (let i = 0; i < count; i++) { users.push({ id: i + 1, name: `멤버 ${i + 1}`, session: '미정', emoji: '❓', color: activePalette[i % 8], assignedSongs: [], isOnline: false }); }
-                const newTeamId = `team_${teamIdCounter++}`;
+                // ✨ UPDATE: 고유 ID 발급 로직 수정 (겹침 방지)
+                const newTeamId = `team_${Date.now()}`;
                 teamsDB[newTeamId] = { id: newTeamId, name: name, password: pw, startDate: start, endDate: end, memberCount: count, users: users, scheduleData: {}, songs: [] };
                 await saveTeam(newTeamId); pendingTeamId = newTeamId; openIdentityModal(newTeamId); 
             }
@@ -900,19 +902,20 @@
             document.getElementById('startDate').removeAttribute('min'); document.getElementById('endDate').removeAttribute('min');
             document.getElementById('startDate').value = team.startDate.toISOString().split('T')[0]; document.getElementById('endDate').value = team.endDate.toISOString().split('T')[0];
             document.getElementById('memberCount').value = team.memberCount; showScreen('setupScreen');
+            setTimeout(() => document.getElementById('teamName').focus(), 100);
         };
 
         document.getElementById('deleteTeamBtn').onclick = () => {
             const team = teamsDB[currentTeamId]; document.getElementById('deleteConfirmInput').value = '';
-            if (team.password) { document.getElementById('deletePwSection').style.display = 'flex'; document.getElementById('deletePwInput').value = ''; } 
-            else { document.getElementById('deletePwSection').style.display = 'none'; }
+            if (team.password) { document.getElementById('deletePwSection').style.display = 'flex'; document.getElementById('deletePwInput').value = ''; setTimeout(() => document.getElementById('deletePwInput').focus(), 100); } 
+            else { document.getElementById('deletePwSection').style.display = 'none'; setTimeout(() => document.getElementById('deleteConfirmInput').focus(), 100); }
             document.getElementById('teamDeleteModal').style.display = 'flex';
         };
         document.getElementById('cancelDeleteBtn').onclick = () => { document.getElementById('teamDeleteModal').style.display = 'none'; };
         document.getElementById('confirmDeleteBtn').onclick = async () => {
             const team = teamsDB[currentTeamId]; const confirmWord = document.getElementById('deleteConfirmInput').value.trim();
-            if (team.password) { const pw = document.getElementById('deletePwInput').value; if (pw !== team.password) return alert("⚠️ 비밀번호가 틀렸습니다!"); }
-            if (confirmWord !== "삭제한다") return alert("⚠️ 정확히 '삭제한다' 라고 입력해주세요!");
+            if (team.password) { const pw = document.getElementById('deletePwInput').value; if (pw !== team.password) { alert("⚠️ 비밀번호가 틀렸습니다!"); return document.getElementById('deletePwInput').focus(); } }
+            if (confirmWord !== "삭제한다") { alert("⚠️ 정확히 '삭제한다' 라고 입력해주세요!"); return document.getElementById('deleteConfirmInput').focus(); }
             for (let room of ['살방', '장전문화센터']) { for (let key in globalReservations[room]) { if (globalReservations[room][key].teamId === currentTeamId) delete globalReservations[room][key]; } }
             await db.collection("teams").doc(currentTeamId).delete(); await saveSystem();
             alert("🗑️ 팀이 완전히 삭제되었습니다."); document.getElementById('teamDeleteModal').style.display = 'none'; 
@@ -944,13 +947,14 @@
             const team = teamsDB[currentTeamId];
             if(team.songs && team.songs.length >= 6) { return alert("⚠️ 곡은 최대 6곡까지만 추가할 수 있습니다.\n삭제가 필요하면 관리자에게 문의하세요."); }
             document.getElementById('newSongInput').value = ''; document.getElementById('addSongModal').style.display = 'flex';
+            setTimeout(() => document.getElementById('newSongInput').focus(), 100);
         };
         document.getElementById('cancelAddSongBtn').onclick = () => { document.getElementById('addSongModal').style.display = 'none'; };
         document.getElementById('confirmAddSongBtn').onclick = async () => {
             const newSong = document.getElementById('newSongInput').value.trim();
-            if(!newSong) return alert("곡명을 입력해주세요!");
+            if(!newSong) { alert("곡명을 입력해주세요!"); return document.getElementById('newSongInput').focus(); }
             const team = teamsDB[currentTeamId]; if(!team.songs) team.songs = [];
-            if(team.songs.includes(newSong)) return alert("이미 등록된 곡입니다!");
+            if(team.songs.includes(newSong)) { alert("이미 등록된 곡입니다!"); return document.getElementById('newSongInput').focus(); }
             team.songs.push(newSong); await saveTeam(currentTeamId); alert(`🎵 '${newSong}' 곡이 추가되었습니다!`); document.getElementById('addSongModal').style.display = 'none';
         };
 
@@ -1072,7 +1076,7 @@
         document.getElementById('cancelUserEditBtn').onclick = () => { document.getElementById('userEditModal').style.display = 'none'; };
         document.getElementById('saveUserEditBtn').onclick = async () => {
             const newName = document.getElementById('editUserName').value.trim(); const newSession = document.getElementById('editUserSession').value;
-            if (!newName) return alert("이름을 입력해주세요!");
+            if (!newName) { alert("이름을 입력해주세요!"); return document.getElementById('editUserName').focus(); }
             const checkedSongs = Array.from(document.querySelectorAll('.edit-song-cb:checked')).map(cb => cb.value);
             const team = teamsDB[currentTeamId]; const userIndex = team.users.findIndex(u => u.id === editingUserId);
             if (userIndex !== -1) { 
@@ -1114,6 +1118,7 @@
                         if (!team.songs || team.songs.length === 0) { songContainer.innerHTML = '<span style="color:gray; font-size:12px;">등록된 곡이 없습니다. 상단의 [🎵 곡 추가] 버튼을 눌러 추가하세요!</span>'; } 
                         else { team.songs.forEach(song => { const isChecked = (user.assignedSongs || []).includes(song) ? 'checked' : ''; songContainer.innerHTML += `<label style="cursor:pointer; font-size:13px;"><input type="checkbox" class="edit-song-cb" value="${song}" ${isChecked}> ${song}</label>`; }); }
                         document.getElementById('userEditModal').style.display = 'flex';
+                        setTimeout(() => document.getElementById('editUserName').focus(), 100);
                         return;
                     }
                     if(user.id !== activeUser.id) alert("⚠️ 본인 일정만 수정할 수 있습니다!\n본인을 변경하려면 팀 목록으로 나가서 다시 입장해주세요."); 
@@ -1287,7 +1292,6 @@
             }
         });
 
-        // ✨ NEW: 엔터 키 누르면 지정된 버튼이 클릭되게 해주는 헬퍼 함수
         function addEnterKeyListener(inputId, buttonId) {
             const inputElement = document.getElementById(inputId);
             if(inputElement) {
@@ -1304,16 +1308,14 @@
             startSync(); 
             document.getElementById('noticeModal').style.display = 'flex'; 
             
-            // ✨ NEW: 팝업창 및 입력창에 엔터키 이벤트 연결
-            addEnterKeyListener('pwInput', 'submitPwBtn'); // 팀 비밀번호 입력창 -> 확인
-            addEnterKeyListener('adminPwInput', 'submitAdminLoginBtn'); // 관리자 로그인 -> 로그인
-            addEnterKeyListener('deletePwInput', 'confirmDeleteBtn'); // 팀 삭제 비번 -> 완전 삭제
-            addEnterKeyListener('deleteConfirmInput', 'confirmDeleteBtn'); // 삭제 타이핑 -> 완전 삭제
-            addEnterKeyListener('newAdminPwInput', 'changeAdminPwBtn'); // 관리자 비번 변경 -> 변경
-            addEnterKeyListener('newSongInput', 'confirmAddSongBtn'); // 곡 추가 -> 추가하기
-            addEnterKeyListener('editUserName', 'saveUserEditBtn'); // 프로필 이름 수정 -> 저장
+            addEnterKeyListener('pwInput', 'submitPwBtn');
+            addEnterKeyListener('adminPwInput', 'submitAdminLoginBtn');
+            addEnterKeyListener('deletePwInput', 'confirmDeleteBtn');
+            addEnterKeyListener('deleteConfirmInput', 'confirmDeleteBtn');
+            addEnterKeyListener('newAdminPwInput', 'changeAdminPwBtn');
+            addEnterKeyListener('newSongInput', 'confirmAddSongBtn');
+            addEnterKeyListener('editUserName', 'saveUserEditBtn');
             
-            // 팀 생성창 엔터키 연결
             addEnterKeyListener('teamName', 'startBtn');
             addEnterKeyListener('teamPassword', 'startBtn');
             addEnterKeyListener('memberCount', 'startBtn');
