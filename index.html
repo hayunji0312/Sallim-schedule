@@ -328,7 +328,7 @@
             <div class="summary-tabs" style="margin-bottom: 20px; flex-wrap: wrap;">
                 <button class="s-tab active" id="adminTabTeams">팀/곡 관리</button>
                 <button class="s-tab" id="adminTabLocks">공식 일정 (잠금)</button>
-                <button class="s-tab" id="adminTabSettings">설정</button>
+                <button class="s-tab" id="adminTabReservations">예약 관리</button> <button class="s-tab" id="adminTabSettings">설정</button>
             </div>
             <div id="adminTeamSection">
                 <p style="font-size: 12px; opacity:0.7; text-align: left;">생성된 팀을 삭제하거나, 등록된 곡을 관리합니다.</p>
@@ -348,6 +348,10 @@
                 </div>
                 <p style="font-size: 12px; font-weight:bold; text-align: left; margin-top: 15px;">현재 잠긴 일정</p>
                 <div id="adminLockList" style="max-height: 150px; overflow-y: auto;"></div>
+            </div>
+            <div id="adminReservationSection" style="display: none;">
+                <p style="font-size: 12px; opacity:0.7; text-align: left;">현재 예약된 전체 합주실 일정을 확인하고 강제로 취소할 수 있습니다.</p>
+                <div id="adminReservationList" style="max-height: 250px; overflow-y: auto;"></div>
             </div>
             <div id="adminSettingsSection" style="display: none;">
                 <div style="background: var(--bg-color); padding: 15px; border-radius: 8px; border: 1px solid var(--border-color); text-align: left;">
@@ -749,17 +753,23 @@
         };
 
         document.getElementById('adminTabTeams').onclick = () => {
-            document.getElementById('adminTabTeams').classList.add('active'); document.getElementById('adminTabLocks').classList.remove('active'); document.getElementById('adminTabSettings').classList.remove('active');
-            document.getElementById('adminTeamSection').style.display = 'block'; document.getElementById('adminLockSection').style.display = 'none'; document.getElementById('adminSettingsSection').style.display = 'none';
+            document.getElementById('adminTabTeams').classList.add('active'); document.getElementById('adminTabLocks').classList.remove('active'); document.getElementById('adminTabSettings').classList.remove('active'); document.getElementById('adminTabReservations').classList.remove('active');
+            document.getElementById('adminTeamSection').style.display = 'block'; document.getElementById('adminLockSection').style.display = 'none'; document.getElementById('adminSettingsSection').style.display = 'none'; document.getElementById('adminReservationSection').style.display = 'none';
         };
         document.getElementById('adminTabLocks').onclick = () => {
-            document.getElementById('adminTabTeams').classList.remove('active'); document.getElementById('adminTabLocks').classList.add('active'); document.getElementById('adminTabSettings').classList.remove('active');
-            document.getElementById('adminTeamSection').style.display = 'none'; document.getElementById('adminLockSection').style.display = 'block'; document.getElementById('adminSettingsSection').style.display = 'none';
+            document.getElementById('adminTabTeams').classList.remove('active'); document.getElementById('adminTabLocks').classList.add('active'); document.getElementById('adminTabSettings').classList.remove('active'); document.getElementById('adminTabReservations').classList.remove('active');
+            document.getElementById('adminTeamSection').style.display = 'none'; document.getElementById('adminLockSection').style.display = 'block'; document.getElementById('adminSettingsSection').style.display = 'none'; document.getElementById('adminReservationSection').style.display = 'none';
             populateAdminLockSelects(); renderAdminLockList();
         };
         document.getElementById('adminTabSettings').onclick = () => {
-            document.getElementById('adminTabTeams').classList.remove('active'); document.getElementById('adminTabLocks').classList.remove('active'); document.getElementById('adminTabSettings').classList.add('active');
-            document.getElementById('adminTeamSection').style.display = 'none'; document.getElementById('adminLockSection').style.display = 'none'; document.getElementById('adminSettingsSection').style.display = 'block';
+            document.getElementById('adminTabTeams').classList.remove('active'); document.getElementById('adminTabLocks').classList.remove('active'); document.getElementById('adminTabSettings').classList.add('active'); document.getElementById('adminTabReservations').classList.remove('active');
+            document.getElementById('adminTeamSection').style.display = 'none'; document.getElementById('adminLockSection').style.display = 'none'; document.getElementById('adminSettingsSection').style.display = 'block'; document.getElementById('adminReservationSection').style.display = 'none';
+        };
+        // 새로 추가되는 예약 관리 탭 클릭 이벤트
+        document.getElementById('adminTabReservations').onclick = () => {
+            document.getElementById('adminTabTeams').classList.remove('active'); document.getElementById('adminTabLocks').classList.remove('active'); document.getElementById('adminTabSettings').classList.remove('active'); document.getElementById('adminTabReservations').classList.add('active');
+            document.getElementById('adminTeamSection').style.display = 'none'; document.getElementById('adminLockSection').style.display = 'none'; document.getElementById('adminSettingsSection').style.display = 'none'; document.getElementById('adminReservationSection').style.display = 'block';
+            renderAdminReservations();
         };
         
         document.getElementById('changeAdminPwBtn').onclick = async () => {
@@ -1231,7 +1241,65 @@
             td.appendChild(innerBox);
             const userNamesString = usersInCell.map(u => `${u.emoji} ${u.name}`).join(', '); td.setAttribute('data-tooltip', `선택: ${userNamesString}`); 
         }
-
+    
+        // 관리자 모드: 전체 예약 리스트 렌더링 및 취소 기능
+        function renderAdminReservations() {
+            const list = document.getElementById('adminReservationList');
+            list.innerHTML = '';
+            
+            let hasReservations = false;
+            ['살방', '장전문화센터'].forEach(room => {
+                const roomReservations = globalReservations[room];
+                if(roomReservations && Object.keys(roomReservations).length > 0) {
+                    hasReservations = true;
+                    // 같은 공간, 같은 날짜, 같은 팀의 예약을 그룹화하여 깔끔하게 표시
+                    const grouped = {};
+                    Object.keys(roomReservations).sort().forEach(key => {
+                        const [date, time] = key.split('_');
+                        const teamName = roomReservations[key].teamName;
+                        const gKey = `${room}_${date}_${teamName}`;
+                        if(!grouped[gKey]) grouped[gKey] = { room, date, teamName, times: [] };
+                        grouped[gKey].times.push(time);
+                    });
+                    
+                    Object.values(grouped).forEach(group => {
+                        group.times.sort();
+                        const y = group.date.slice(0,4); const m = group.date.slice(4,6); const d = group.date.slice(6,8);
+                        
+                        const item = document.createElement('div'); 
+                        item.className = 'admin-list-item';
+                        item.innerHTML = `
+                            <div>
+                                <strong style="color:var(--btn-bg);">[${group.room}] ${y}.${m}.${d}</strong><br>
+                                <span style="font-size:13px; color:var(--text-color);">
+                                    🎸 ${group.teamName} (${group.times[0]} 부터 총 ${group.times.length}칸)
+                                </span>
+                            </div>`;
+                        
+                        const delBtn = document.createElement('button'); 
+                        delBtn.className = 'danger-btn'; 
+                        delBtn.innerText = '예약 취소';
+                        delBtn.onclick = async () => {
+                            if(confirm(`[${group.teamName}] 팀의 ${y}.${m}.${d} (${group.room}) 예약을 강제로 취소하시겠습니까?`)) {
+                                group.times.forEach(t => {
+                                    delete globalReservations[group.room][`${group.date}_${t}`];
+                                });
+                                await saveSystem(); // 파이어베이스 동기화
+                                renderAdminReservations(); // 리스트 새로고침
+                                alert("예약이 취소되었습니다.");
+                            }
+                        };
+                        item.appendChild(delBtn);
+                        list.appendChild(item);
+                    });
+                }
+            });
+            
+            if(!hasReservations) {
+                list.innerHTML = '<p style="font-size:13px; color:gray;">현재 예약된 일정이 없습니다.</p>';
+            }
+        }
+    
         function renderGlobalWeek(mondayDate) {
             const scheduleBody = document.getElementById('gScheduleBody'); scheduleBody.innerHTML = ''; 
             const weekDates = [];
