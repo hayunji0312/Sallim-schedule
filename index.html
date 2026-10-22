@@ -149,7 +149,10 @@
         .date-sub { display: block; font-size: 11px; opacity: 0.7; margin-top: 3px; font-weight: normal; }
         .time-label { width: 60px; font-size: 12px; opacity: 0.8; border: none; background-color: transparent; text-align: right; padding-right: 10px; border-right: 2px solid var(--table-border-dark); }
         
-        .cell { height: 25px; cursor: pointer; padding: 0; vertical-align: top; touch-action: pan-x; }
+        .cell { height: 25px; cursor: pointer; padding: 0; vertical-align: top; touch-action: manipulation; }
+        .schedule-section.paint-mode .cell { touch-action: none; }
+        .mobile-paint-toggle { display:none; }
+        .schedule-table-scroll { max-width:100%; width:100%; overflow-x:auto; -webkit-overflow-scrolling:touch; }
         
         .cell::after { content: attr(data-tooltip); position: absolute; bottom: 110%; left: 50%; transform: translateX(-50%); white-space: nowrap; background-color: rgba(0, 0, 0, 0.85); color: white; padding: 5px 10px; border-radius: 4px; font-size: 11px; opacity: 0; visibility: hidden; transition: opacity 0.2s; z-index: 10; pointer-events: none; }
         .cell[data-tooltip]:hover::after { opacity: 1; visibility: visible; }
@@ -198,6 +201,12 @@
             .week-nav button { padding: 6px 12px; font-size: 14px; }
             
             table th, table td { width: 60px; font-size: 12px; }
+            #scheduleTable, #gScheduleTable { min-width: 620px; }
+            .schedule-screen { padding: 20px 10px; }
+            .schedule-section, .content-wrapper { min-width:0; max-width:100%; }
+            .current-week-label { white-space:normal; font-size:12px; text-align:center; }
+            .mobile-paint-toggle { display:block; width:100%; border:1px solid var(--border-color); border-radius:8px; background:var(--card-bg); color:var(--text-color); padding:12px; margin-bottom:10px; font-weight:bold; }
+            .week-nav button { flex-shrink:0; }
             th .date-sub { font-size: 10px; }
             .cell { height: 22px; }
             .color-circle { width: 14px; height: 14px; }
@@ -522,12 +531,12 @@
                     <h2 class="current-week-label" id="currentWeekLabel">2026.00.00 ~ 2026.00.00</h2>
                     <button id="nextWeekBtn">▶</button>
                 </div>
-                <table id="scheduleTable">
+                <button type="button" class="mobile-paint-toggle" id="mobilePaintToggle" aria-pressed="false">✋ 스크롤 모드 · 일정 입력하기</button><div class="schedule-table-scroll"><table id="scheduleTable">
                     <thead>
                         <tr id="tableHeaderRow"><th class="time-label"></th></tr>
                     </thead>
                     <tbody id="scheduleBody"></tbody>
-                </table>
+                </table></div>
             </div>
             <div class="user-selection" id="userContainer"></div>
         </div>
@@ -552,12 +561,12 @@
                     <h2 class="current-week-label" id="gCurrentWeekLabel">2026.00.00 ~ 2026.00.00</h2>
                     <button id="gNextWeekBtn">▶</button>
                 </div>
-                <table id="gScheduleTable">
+                <div class="schedule-table-scroll"><table id="gScheduleTable">
                     <thead>
                         <tr id="gTableHeaderRow"><th class="time-label"></th></tr>
                     </thead>
                     <tbody id="gScheduleBody"></tbody>
-                </table>
+                </table></div>
             </div>
         </div>
     </div>
@@ -596,6 +605,17 @@
         
         let isTouch = false;
         let currentDragSession = new Set();
+        let mobilePaintMode = false;
+        function isMobileLayout() { return window.matchMedia('(max-width: 768px)').matches; }
+        function setMobilePaintMode(enabled) {
+            mobilePaintMode = enabled;
+            document.querySelector('#mainScreen .schedule-section').classList.toggle('paint-mode', enabled && isMobileLayout());
+            const btn = document.getElementById('mobilePaintToggle');
+            btn.textContent = enabled ? '✏️ 입력 모드 · 스크롤로 돌아가기' : '✋ 스크롤 모드 · 일정 입력하기';
+            btn.setAttribute('aria-pressed', String(enabled));
+        }
+        document.getElementById('mobilePaintToggle').onclick = () => { endDrag(); setMobilePaintMode(!mobilePaintMode); };
+        window.addEventListener('resize', () => setMobilePaintMode(mobilePaintMode));
 
         // --- Firebase 실시간 동기화 함수 ---
         function startSync() {
@@ -656,6 +676,7 @@
         }
         document.addEventListener('mouseup', endDrag);
         document.addEventListener('touchend', endDrag);
+        document.addEventListener('touchcancel', endDrag);
 
         function showScreen(screenId) {
             document.querySelectorAll('.modal-overlay').forEach(el => el.style.display = 'none');
@@ -1066,21 +1087,37 @@
 
             let slots = []; let curr = new Date(`2000-01-01T${chosenStart}`);
             while(curr < endObj) { slots.push(`${dateStr}_${String(curr.getHours()).padStart(2,'0')}:${String(curr.getMinutes()).padStart(2,'0')}`); curr.setMinutes(curr.getMinutes() + 30); }
-            const roomSchedule = globalReservations[selectedRoom];
-            for(let slot of slots) { 
-                if(globalLocks[slot]) return alert(`앗! 해당 시간은 공식 일정(${globalLocks[slot]})으로 잠겨있습니다 🔒`); 
-                if(roomSchedule[slot] && roomSchedule[slot].teamId !== currentTeamId) { return alert(`앗! 해당 시간(${slot.split('_')[1]})에 이미 '${roomSchedule[slot].teamName}' 팀이 [${selectedRoom}]을 예약했습니다 😭`); } 
+            const teamId = currentTeamId, teamName = teamsDB[teamId].name;
+            const prior = (globalReservations[selectedRoom] || {})[slots[0]];
+            const cancel = !!(prior && prior.teamId === teamId);
+            if (cancel && !confirm('선택한 시간을 예약 취소할까요?')) return;
+            const reservationsRef = db.collection('system').doc('reservations');
+            const locksRef = db.collection('system').doc('locks');
+            try {
+                await db.runTransaction(async tx => {
+                    const reservationsSnap = await tx.get(reservationsRef);
+                    const locksSnap = await tx.get(locksRef);
+                    const reservations = reservationsSnap.exists ? reservationsSnap.data() : { '살방': {}, '장전문화센터': {} };
+                    const locks = locksSnap.exists ? locksSnap.data() : {};
+                    const room = { ...(reservations[selectedRoom] || {}) };
+                    for (const slot of slots) {
+                        if (locks[slot]) throw new Error('공식 일정 잠금: ' + slot);
+                        if (room[slot] && room[slot].teamId !== teamId) throw new Error('다른 팀 예약: ' + slot);
+                        if (!cancel && room[slot] && room[slot].teamId === teamId) throw new Error('이미 예약된 시간: ' + slot);
+                    }
+                    for (const slot of slots) {
+                        if (cancel) delete room[slot];
+                        else room[slot] = { teamId, teamName };
+                    }
+                    tx.set(reservationsRef, { ...reservations, [selectedRoom]: room });
+                });
+                alert(cancel ? '예약이 취소되었습니다.' : '예약이 확정되었습니다.');
+                document.getElementById('roomSelectModal').style.display = 'none';
+                pendingReservation = null;
+            } catch (error) {
+                console.error(error);
+                alert('예약 처리 실패: ' + error.message + '\\n최신 예약을 확인하고 다시 시도해주세요.');
             }
-            if (roomSchedule[slots[0]] && roomSchedule[slots[0]].teamId === currentTeamId) {
-                if(confirm(`이미 우리 팀이 [${selectedRoom}]에 예약한 시간입니다. 예약을 취소할까요?`)) { 
-                    slots.forEach(slot => delete roomSchedule[slot]); await saveSystem();
-                    alert("예약이 취소되었습니다."); document.getElementById('roomSelectModal').style.display = 'none'; 
-                } 
-                return;
-            }
-            slots.forEach(slot => { roomSchedule[slot] = { teamId: currentTeamId, teamName: teamsDB[currentTeamId].name }; });
-            await saveSystem(); alert(`🎉 [${selectedRoom}] ${chosenStart} ~ ${chosenEnd} 예약이 확정되었습니다!\n전체 시간표에서 확인해보세요.`);
-            document.getElementById('roomSelectModal').style.display = 'none'; pendingReservation = null;
         };
 
         document.getElementById('cancelUserEditBtn').onclick = () => { document.getElementById('userEditModal').style.display = 'none'; };
@@ -1177,18 +1214,21 @@
                         }); 
                         
                         td.addEventListener('touchstart', function(e) {
-                            isTouch = true; 
+                            isTouch = true;
+                            if (isMobileLayout() && !mobilePaintMode) return;
+                            if (e.cancelable) e.preventDefault();
                             startPaint(this);
-                        }, {passive: true});
+                        }, {passive: false});
 
                         td.addEventListener('touchmove', function(e) {
-                            if (!isDragging) return;
+                            if (!isDragging || (isMobileLayout() && !mobilePaintMode)) return;
+                            if (e.cancelable) e.preventDefault();
                             const touch = e.touches[0];
                             const targetElement = document.elementFromPoint(touch.clientX, touch.clientY);
                             if (targetElement && targetElement.classList.contains('cell')) {
                                 paintCell(targetElement);
                             }
-                        }, {passive: true});
+                        }, {passive: false});
 
                         tr.appendChild(td);
                     } scheduleBody.appendChild(tr);
