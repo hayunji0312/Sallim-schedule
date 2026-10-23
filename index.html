@@ -52,11 +52,6 @@
         .song-add-btn { background-color: var(--card-bg); border: 1px solid var(--border-color); color: var(--text-color); padding: 6px 12px; border-radius: 20px; font-size: 13px; font-weight: bold; cursor: pointer; transition: 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
         .song-add-btn:hover { background-color: var(--border-color); }
 
-        #themeToggleBtn { position: fixed; bottom: 30px; right: 30px; width: 50px; height: 50px; border-radius: 25px; background-color: var(--btn-bg); color: var(--btn-text); border: none; font-size: 24px; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.2); display: flex; justify-content: center; align-items: center; z-index: 1000; transition: 0.3s; }
-        #themeToggleBtn:hover { transform: scale(1.1); }
-        #themePopup { display: none; position: fixed; bottom: 90px; right: 30px; background-color: var(--card-bg); border: 1px solid var(--border-color); border-radius: 12px; box-shadow: 0 4px 16px rgba(0,0,0,0.15); padding: 10px; flex-direction: column; gap: 5px; z-index: 1000; }
-        .theme-option { background: none; border: none; padding: 10px 15px; border-radius: 8px; cursor: pointer; text-align: left; color: var(--text-color); font-size: 14px; transition: 0.2s; white-space: nowrap; }
-        .theme-option:hover { background-color: var(--border-color); font-weight: bold; }
 
         .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.6); display: flex; justify-content: center; align-items: center; z-index: 2000; }
         .modal-content { background-color: var(--card-bg); color: var(--text-color); padding: 30px; border-radius: 12px; width: 340px; text-align: center; box-shadow: 0 4px 20px rgba(0,0,0,0.3); border: 1px solid var(--border-color); max-height: 80vh; overflow-y: auto;}
@@ -149,7 +144,10 @@
         .date-sub { display: block; font-size: 11px; opacity: 0.7; margin-top: 3px; font-weight: normal; }
         .time-label { width: 60px; font-size: 12px; opacity: 0.8; border: none; background-color: transparent; text-align: right; padding-right: 10px; border-right: 2px solid var(--table-border-dark); }
         
-        .cell { height: 25px; cursor: pointer; padding: 0; vertical-align: top; touch-action: pan-x; }
+        .cell { height: 25px; cursor: pointer; padding: 0; vertical-align: top; touch-action: manipulation; }
+        .schedule-section.paint-mode .cell { touch-action: none; }
+        .mobile-paint-toggle { display:none; }
+        .schedule-table-scroll { max-width:100%; width:100%; overflow-x:auto; -webkit-overflow-scrolling:touch; }
         
         .cell::after { content: attr(data-tooltip); position: absolute; bottom: 110%; left: 50%; transform: translateX(-50%); white-space: nowrap; background-color: rgba(0, 0, 0, 0.85); color: white; padding: 5px 10px; border-radius: 4px; font-size: 11px; opacity: 0; visibility: hidden; transition: opacity 0.2s; z-index: 10; pointer-events: none; }
         .cell[data-tooltip]:hover::after { opacity: 1; visibility: visible; }
@@ -198,6 +196,23 @@
             .week-nav button { padding: 6px 12px; font-size: 14px; }
             
             table th, table td { width: 60px; font-size: 12px; }
+            #scheduleTable, #gScheduleTable { min-width: 620px; }
+            .schedule-screen { padding: 20px 10px; }
+            .schedule-section, .content-wrapper { min-width:0; max-width:100%; }
+            .current-week-label { white-space:normal; font-size:12px; text-align:center; }
+            .mobile-paint-toggle {
+                display: flex; align-items: center; justify-content: center;
+                position: fixed; right: max(16px, env(safe-area-inset-right));
+                bottom: calc(16px + env(safe-area-inset-bottom));
+                z-index: 1000; width: 112px; min-height: 56px; padding: 10px 12px;
+                border: 0; border-radius: 28px;
+                background: var(--btn-bg); color: var(--btn-text);
+                box-shadow: 0 4px 14px rgba(0,0,0,0.28); font-size: 14px;
+                font-weight: bold; cursor: pointer;
+            }
+            .mobile-paint-toggle[aria-pressed="true"] { outline: 3px solid var(--table-border-dark); outline-offset: 2px; }
+            .schedule-screen { padding-bottom: calc(90px + env(safe-area-inset-bottom)); }
+            .week-nav button { flex-shrink:0; }
             th .date-sub { font-size: 10px; }
             .cell { height: 22px; }
             .color-circle { width: 14px; height: 14px; }
@@ -213,13 +228,6 @@
 </head>
 <body class="theme-default">
 
-    <button id="themeToggleBtn" title="테마 선택">🎨</button>
-    <div id="themePopup">
-        <button class="theme-option" data-theme="theme-default">⚫ 시크 모던</button>
-        <button class="theme-option" data-theme="theme-wood">🪵 어쿠스틱 우드</button>
-        <button class="theme-option" data-theme="theme-dark">🌙 미드나잇 다크</button>
-        <button class="theme-option" data-theme="theme-blue">🌊 오션 블루</button>
-    </div>
 
     <div id="guideModal" class="modal-overlay" style="display: none;">
         <div class="modal-content" style="width: 400px; max-width: 90%;">
@@ -522,15 +530,20 @@
                     <h2 class="current-week-label" id="currentWeekLabel">2026.00.00 ~ 2026.00.00</h2>
                     <button id="nextWeekBtn">▶</button>
                 </div>
-                <table id="scheduleTable">
+                <div class="schedule-table-scroll">
+                    <table id="scheduleTable">
                     <thead>
                         <tr id="tableHeaderRow"><th class="time-label"></th></tr>
                     </thead>
                     <tbody id="scheduleBody"></tbody>
                 </table>
+                </div>
             </div>
             <div class="user-selection" id="userContainer"></div>
         </div>
+        <button type="button" class="mobile-paint-toggle" id="mobilePaintToggle"
+                aria-pressed="false" aria-label="일정 편집 모드로 전환"
+                title="일정 편집 모드로 전환">✏️ 편집 모드</button>
     </div>
 
     <div id="globalScreen" class="schedule-screen">
@@ -552,12 +565,12 @@
                     <h2 class="current-week-label" id="gCurrentWeekLabel">2026.00.00 ~ 2026.00.00</h2>
                     <button id="gNextWeekBtn">▶</button>
                 </div>
-                <table id="gScheduleTable">
+                <div class="schedule-table-scroll"><table id="gScheduleTable">
                     <thead>
                         <tr id="gTableHeaderRow"><th class="time-label"></th></tr>
                     </thead>
                     <tbody id="gScheduleBody"></tbody>
-                </table>
+                </table></div>
             </div>
         </div>
     </div>
@@ -596,6 +609,20 @@
         
         let isTouch = false;
         let currentDragSession = new Set();
+        let mobilePaintMode = false;
+        function isMobileLayout() { return window.matchMedia('(max-width: 768px)').matches; }
+        function setMobilePaintMode(enabled) {
+            mobilePaintMode = enabled;
+            document.querySelector('#mainScreen .schedule-section').classList.toggle('paint-mode', enabled && isMobileLayout());
+            const btn = document.getElementById('mobilePaintToggle');
+            btn.textContent = enabled ? '↕️ 스크롤 모드' : '✏️ 편집 모드';
+            btn.setAttribute('aria-pressed', String(enabled));
+            const label = enabled ? '스크롤 모드로 전환' : '일정 편집 모드로 전환';
+            btn.setAttribute('aria-label', label);
+            btn.title = label;
+        }
+        document.getElementById('mobilePaintToggle').onclick = () => { endDrag(); setMobilePaintMode(!mobilePaintMode); };
+        window.addEventListener('resize', () => setMobilePaintMode(mobilePaintMode));
 
         // --- Firebase 실시간 동기화 함수 ---
         function startSync() {
@@ -656,6 +683,7 @@
         }
         document.addEventListener('mouseup', endDrag);
         document.addEventListener('touchend', endDrag);
+        document.addEventListener('touchcancel', endDrag);
 
         function showScreen(screenId) {
             document.querySelectorAll('.modal-overlay').forEach(el => el.style.display = 'none');
@@ -683,21 +711,6 @@
         document.getElementById('closeGuideBtn').onclick = () => { document.getElementById('guideModal').style.display = 'none'; };
         guidePrevBtn.onclick = () => { if (currentGuideSlide > 0) { currentGuideSlide--; updateGuideModal(); } };
         guideNextBtn.onclick = () => { if (currentGuideSlide < guideSlides.length - 1) { currentGuideSlide++; updateGuideModal(); } };
-
-        const themeBtn = document.getElementById('themeToggleBtn'); const themePopup = document.getElementById('themePopup');
-        themeBtn.onclick = (e) => { e.stopPropagation(); themePopup.style.display = themePopup.style.display === 'flex' ? 'none' : 'flex'; };
-        document.addEventListener('click', () => { themePopup.style.display = 'none'; });
-        document.querySelectorAll('.theme-option').forEach(btn => {
-            btn.onclick = () => { 
-                const newTheme = btn.dataset.theme; document.body.className = newTheme; themePopup.style.display = 'none'; 
-                const activePalette = themePalettes[newTheme];
-                Object.values(teamsDB).forEach(team => { team.users.forEach((user, idx) => { user.color = activePalette[idx % 8]; }); });
-                if (currentTeamId && document.getElementById('mainScreen').style.display === 'flex') {
-                    renderUsers(teamsDB[currentTeamId]); document.querySelectorAll('#scheduleTable .cell').forEach(td => updateCellUI(td));
-                }
-                if (document.getElementById('globalScreen').style.display === 'flex') renderGlobalWeek(currentViewMonday);
-            };
-        });
 
         document.getElementById('donateBtn').onclick = () => {
             alert("이 사이트는 부산대 반도체공학과 하윤지가 제작했습니다.\n지나가다 보이시면 커피 한 잔만 사주십쇼. ☕😎");
@@ -949,6 +962,7 @@
             currentTeamId = teamId; const team = teamsDB[teamId];
             const userIndex = team.users.findIndex(u => u.id === userObj.id);
             if (userIndex !== -1) { team.users[userIndex].isOnline = true; await saveTeam(teamId); activeUser = team.users[userIndex]; } else { activeUser = userObj; }
+            setMobilePaintMode(false);
             document.getElementById('mainTeamTitle').innerText = team.name; buildTableSkeleton(); 
             renderUsers(team); currentViewMonday = getMonday(team.startDate); renderWeek(currentViewMonday); showScreen('mainScreen');
         }
@@ -1066,21 +1080,37 @@
 
             let slots = []; let curr = new Date(`2000-01-01T${chosenStart}`);
             while(curr < endObj) { slots.push(`${dateStr}_${String(curr.getHours()).padStart(2,'0')}:${String(curr.getMinutes()).padStart(2,'0')}`); curr.setMinutes(curr.getMinutes() + 30); }
-            const roomSchedule = globalReservations[selectedRoom];
-            for(let slot of slots) { 
-                if(globalLocks[slot]) return alert(`앗! 해당 시간은 공식 일정(${globalLocks[slot]})으로 잠겨있습니다 🔒`); 
-                if(roomSchedule[slot] && roomSchedule[slot].teamId !== currentTeamId) { return alert(`앗! 해당 시간(${slot.split('_')[1]})에 이미 '${roomSchedule[slot].teamName}' 팀이 [${selectedRoom}]을 예약했습니다 😭`); } 
+            const teamId = currentTeamId, teamName = teamsDB[teamId].name;
+            const prior = (globalReservations[selectedRoom] || {})[slots[0]];
+            const cancel = !!(prior && prior.teamId === teamId);
+            if (cancel && !confirm('선택한 시간을 예약 취소할까요?')) return;
+            const reservationsRef = db.collection('system').doc('reservations');
+            const locksRef = db.collection('system').doc('locks');
+            try {
+                await db.runTransaction(async tx => {
+                    const reservationsSnap = await tx.get(reservationsRef);
+                    const locksSnap = await tx.get(locksRef);
+                    const reservations = reservationsSnap.exists ? reservationsSnap.data() : { '살방': {}, '장전문화센터': {} };
+                    const locks = locksSnap.exists ? locksSnap.data() : {};
+                    const room = { ...(reservations[selectedRoom] || {}) };
+                    for (const slot of slots) {
+                        if (locks[slot]) throw new Error('공식 일정 잠금: ' + slot);
+                        if (room[slot] && room[slot].teamId !== teamId) throw new Error('다른 팀 예약: ' + slot);
+                        if (!cancel && room[slot] && room[slot].teamId === teamId) throw new Error('이미 예약된 시간: ' + slot);
+                    }
+                    for (const slot of slots) {
+                        if (cancel) delete room[slot];
+                        else room[slot] = { teamId, teamName };
+                    }
+                    tx.set(reservationsRef, { ...reservations, [selectedRoom]: room });
+                });
+                alert(cancel ? '예약이 취소되었습니다.' : '예약이 확정되었습니다.');
+                document.getElementById('roomSelectModal').style.display = 'none';
+                pendingReservation = null;
+            } catch (error) {
+                console.error(error);
+                alert('예약 처리 실패: ' + error.message + '\\n최신 예약을 확인하고 다시 시도해주세요.');
             }
-            if (roomSchedule[slots[0]] && roomSchedule[slots[0]].teamId === currentTeamId) {
-                if(confirm(`이미 우리 팀이 [${selectedRoom}]에 예약한 시간입니다. 예약을 취소할까요?`)) { 
-                    slots.forEach(slot => delete roomSchedule[slot]); await saveSystem();
-                    alert("예약이 취소되었습니다."); document.getElementById('roomSelectModal').style.display = 'none'; 
-                } 
-                return;
-            }
-            slots.forEach(slot => { roomSchedule[slot] = { teamId: currentTeamId, teamName: teamsDB[currentTeamId].name }; });
-            await saveSystem(); alert(`🎉 [${selectedRoom}] ${chosenStart} ~ ${chosenEnd} 예약이 확정되었습니다!\n전체 시간표에서 확인해보세요.`);
-            document.getElementById('roomSelectModal').style.display = 'none'; pendingReservation = null;
         };
 
         document.getElementById('cancelUserEditBtn').onclick = () => { document.getElementById('userEditModal').style.display = 'none'; };
@@ -1177,18 +1207,21 @@
                         }); 
                         
                         td.addEventListener('touchstart', function(e) {
-                            isTouch = true; 
+                            isTouch = true;
+                            if (isMobileLayout() && !mobilePaintMode) return;
+                            if (e.cancelable) e.preventDefault();
                             startPaint(this);
-                        }, {passive: true});
+                        }, {passive: false});
 
                         td.addEventListener('touchmove', function(e) {
-                            if (!isDragging) return;
+                            if (!isDragging || (isMobileLayout() && !mobilePaintMode)) return;
+                            if (e.cancelable) e.preventDefault();
                             const touch = e.touches[0];
                             const targetElement = document.elementFromPoint(touch.clientX, touch.clientY);
                             if (targetElement && targetElement.classList.contains('cell')) {
                                 paintCell(targetElement);
                             }
-                        }, {passive: true});
+                        }, {passive: false});
 
                         tr.appendChild(td);
                     } scheduleBody.appendChild(tr);
