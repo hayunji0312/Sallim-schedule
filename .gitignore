@@ -1,0 +1,7 @@
+node_modules/
+.env
+.env.*
+!.env.example
+backups/
+*.service-account.json
+service-account*.json
