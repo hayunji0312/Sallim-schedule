@@ -611,7 +611,13 @@
         let currentDragSession = new Set();
         let mobilePaintMode = false;
         function isMobileLayout() { return window.matchMedia('(max-width: 768px)').matches; }
+        // Every painting entry point must respect the current mobile input mode.
+        function canPaintSchedule() { return !isMobileLayout() || mobilePaintMode; }
         function setMobilePaintMode(enabled) {
+            if (mobilePaintMode && !enabled && isDragging) {
+                // Flush the active edit before turning painting off.
+                endDrag();
+            }
             mobilePaintMode = enabled;
             document.querySelector('#mainScreen .schedule-section').classList.toggle('paint-mode', enabled && isMobileLayout());
             const btn = document.getElementById('mobilePaintToggle');
@@ -1168,6 +1174,7 @@
         }
 
         function startPaint(cell) {
+            if (!canPaintSchedule()) return;
             if(cell.classList.contains('disabled') || cell.classList.contains('locked')) return; 
             isDragging = true; currentDragSession.clear();
             const key = cell.dataset.key; if(!key) return;
@@ -1179,6 +1186,7 @@
         }
 
         function paintCell(cell) {
+            if (!canPaintSchedule() || !isDragging) return;
             if(cell.classList.contains('disabled') || cell.classList.contains('locked')) return; 
             const key = cell.dataset.key;
             if(!key || currentDragSession.has(key)) return; 
@@ -1198,23 +1206,23 @@
                         const td = document.createElement('td'); td.className = 'cell'; td.dataset.time = timeStr; td.dataset.dayIndex = day; 
                         
                         td.addEventListener('mousedown', function(e) {
-                            if (isTouch) return; 
+                            if (isTouch || !canPaintSchedule()) return; 
                             e.preventDefault(); 
                             startPaint(this);
                         });
                         td.addEventListener('mouseenter', function() {
-                            if (isDragging && !isTouch) paintCell(this);
+                            if (isDragging && !isTouch && canPaintSchedule()) paintCell(this);
                         }); 
                         
                         td.addEventListener('touchstart', function(e) {
                             isTouch = true;
-                            if (isMobileLayout() && !mobilePaintMode) return;
+                            if (!canPaintSchedule()) return;
                             if (e.cancelable) e.preventDefault();
                             startPaint(this);
                         }, {passive: false});
 
                         td.addEventListener('touchmove', function(e) {
-                            if (!isDragging || (isMobileLayout() && !mobilePaintMode)) return;
+                            if (!isDragging || !canPaintSchedule()) return;
                             if (e.cancelable) e.preventDefault();
                             const touch = e.touches[0];
                             const targetElement = document.elementFromPoint(touch.clientX, touch.clientY);
