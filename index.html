@@ -502,7 +502,7 @@
         </div>
         <div class="input-group">
             <label>참여 인원:</label>
-            <input type="number" id="memberCount" min="1" max="8" value="8">
+            <input type="number" id="memberCount" min="1" max="10" value="8">
         </div>
         <div class="setup-btns">
             <button class="cancel-btn" id="cancelSetupBtn">취소</button>
@@ -589,10 +589,10 @@
 
         // --- 전역 변수 설정 ---
         const themePalettes = {
-            'theme-default': ["#222222", "#444444", "#666666", "#888888", "#AAAAAA", "#CCCCCC", "#E5E5E5", "#F5F5F5"],
-            'theme-wood': ["#3E2723", "#4E342E", "#5D4037", "#6D4C41", "#795548", "#8D6E63", "#A1887F", "#D7CCC8"],
-            'theme-dark': ["#555555", "#6c6c6c", "#828282", "#999999", "#afafaf", "#c6c6c6", "#dcdcdc", "#f2f2f2"],
-            'theme-blue': ["#0B2B46", "#124068", "#1A568C", "#2470B3", "#3B8FD9", "#69AEE3", "#98C9ED", "#C6E4F6"]
+            'theme-default': ["#222222", "#444444", "#666666", "#888888", "#AAAAAA", "#CCCCCC", "#E5E5E5", "#F5F5F5", "#277DA1", "#C77D24"],
+            'theme-wood': ["#3E2723", "#4E342E", "#5D4037", "#6D4C41", "#795548", "#8D6E63", "#A1887F", "#D7CCC8", "#BA6B3A", "#748C45"],
+            'theme-dark': ["#555555", "#6c6c6c", "#828282", "#999999", "#afafaf", "#c6c6c6", "#dcdcdc", "#f2f2f2", "#2F91B2", "#B87A32"],
+            'theme-blue': ["#0B2B46", "#124068", "#1A568C", "#2470B3", "#3B8FD9", "#69AEE3", "#98C9ED", "#C6E4F6", "#7655A9", "#BC772F"]
         };
 
         let teamsDB = {}; const MAX_TEAMS = 6; 
@@ -896,21 +896,21 @@
             const isDuplicate = Object.values(teamsDB).some(t => t.name === name && (!isEditMode || t.id !== editingTeamId));
             if (isDuplicate) return alert("⚠️ 이미 똑같은 이름의 팀이 있습니다! 다른 이름으로 지어주세요.");
             if (pw && pw.length !== 4) return alert("⚠️ 비밀번호를 설정하시려면 숫자 4자리를 꽉 채워주세요!");
-            if (isNaN(count) || count < 1 || count > 8) return alert("⚠️ 인원수는 1~8명 사이여야 합니다!");
+            if (isNaN(count) || count < 1 || count > 10) return alert("⚠️ 인원수는 1~10명 사이여야 합니다!");
             const start = new Date(startVal); const end = new Date(endVal); end.setHours(23, 59, 59);
             if (start > end) return alert("⚠️ 종료일이 시작일보다 빠를 수 없습니다!");
 
             const currentTheme = document.body.className || 'theme-default'; const activePalette = themePalettes[currentTheme];
             if (isEditMode) {
                 const team = teamsDB[editingTeamId]; team.name = name; team.password = pw; team.startDate = start; team.endDate = end;
-                if (count > team.memberCount) { for (let i = team.memberCount; i < count; i++) { team.users.push({ id: i + 1, name: `멤버 ${i + 1}`, session: '미정', emoji: '❓', color: activePalette[i % 8], assignedSongs: [], isOnline: false }); } } 
+                if (count > team.memberCount) { for (let i = team.memberCount; i < count; i++) { team.users.push({ id: i + 1, name: `멤버 ${i + 1}`, session: '미정', emoji: '❓', color: activePalette[i % activePalette.length], assignedSongs: [], isOnline: false }); } } 
                 else if (count < team.memberCount) { team.users = team.users.slice(0, count); }
                 team.memberCount = count; alert("✅ 수정이 완료되었습니다!"); 
                 if(!team.users.find(u => u.id === activeUser.id)) activeUser = team.users[0];
                 await saveTeam(editingTeamId); enterTeam(editingTeamId, activeUser);
             } else {
                 const users = [];
-                for (let i = 0; i < count; i++) { users.push({ id: i + 1, name: `멤버 ${i + 1}`, session: '미정', emoji: '❓', color: activePalette[i % 8], assignedSongs: [], isOnline: false }); }
+                for (let i = 0; i < count; i++) { users.push({ id: i + 1, name: `멤버 ${i + 1}`, session: '미정', emoji: '❓', color: activePalette[i % activePalette.length], assignedSongs: [], isOnline: false }); }
                 // ✨ UPDATE: 고유 ID 발급 로직 수정 (겹침 방지)
                 const newTeamId = `team_${Date.now()}`;
                 teamsDB[newTeamId] = { id: newTeamId, name: name, password: pw, startDate: start, endDate: end, memberCount: count, users: users, scheduleData: {}, songs: [] };
