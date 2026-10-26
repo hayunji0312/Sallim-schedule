@@ -1,0 +1,12 @@
+{
+  "name": "sallim-schedule",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Static site with optional server-only maintenance scripts",
+  "scripts": {
+    "backup:firestore": "node scripts/backup-firestore.cjs"
+  },
+  "dependencies": {
+    "firebase-admin": "^13.0.0"
+  }
+}
