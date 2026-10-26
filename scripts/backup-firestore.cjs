@@ -1,7 +1,8 @@
 'use strict';
 
-// READ-ONLY backup. Run locally, never in a browser or an open API endpoint.
-// Requires GOOGLE_APPLICATION_CREDENTIALS and FIREBASE_PROJECT_ID.
+// READ-ONLY backup. Run in a trusted local terminal or Google Cloud Shell.
+// Requires FIREBASE_PROJECT_ID and Application Default Credentials (ADC).
+// Cloud Shell generally supplies ADC without downloading a service-account key.
 // Backups contain all private data, including plaintext legacy passwords.
 const admin = require('firebase-admin');
 const fs = require('node:fs/promises');
@@ -9,8 +10,8 @@ const path = require('node:path');
 const crypto = require('node:crypto');
 
 const projectId = process.env.FIREBASE_PROJECT_ID;
-if (!projectId || !process.env.GOOGLE_APPLICATION_CREDENTIALS) {
-  throw new Error('Set FIREBASE_PROJECT_ID and GOOGLE_APPLICATION_CREDENTIALS before running.');
+if (!projectId) {
+  throw new Error('Set FIREBASE_PROJECT_ID before running (e.g. salim-schedule).');
 }
 admin.initializeApp({ credential: admin.credential.applicationDefault(), projectId });
 const db = admin.firestore();
